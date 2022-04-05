@@ -59,4 +59,4 @@ https://user-images.githubusercontent.com/62618224/161809732-45e22ba9-6224-4047-
 
 ## References
 
-[1] Zhou, Yangming, Jin-Kao Hao and B ́eatrice Duval (Dec. 2016). ‘Reinforcement learning based local search for grouping problems: A case study on graph coloring’. In: Expert Systems with Applications 64, pp. 412–422. issn: 09574174. doi: 10.1016/j.eswa.2016.07.047.
+[1] Zhou, Yangming, Jin-Kao Hao and Béatrice Duval (Dec. 2016). ‘Reinforcement learning based local search for grouping problems: A case study on graph coloring’. In: Expert Systems with Applications 64, pp. 412–422. issn: 09574174. doi: 10.1016/j.eswa.2016.07.047.
