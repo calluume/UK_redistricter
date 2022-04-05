@@ -5,7 +5,7 @@ This redistricter has been developed as part of my dissertation for the final ye
 
 The project is being applied to the UK, especially with the current boundary review set to be completed in 2023, and aims to directly optimise solutions for fairness, unlike many papers within the literature. This is done using comparisons between party seat share and proportional vote, alongside some compactness measures and legal constraints to ensure the model is able to produce reasonable results, whilst still being able to best represent the electorate.
 
-![example map](https://github.com/stebey/UK_redistricter/images/results/south.png?raw=true)
+<img width="600" alt="south" src="https://user-images.githubusercontent.com/62618224/161809829-1a0d43fb-a570-40de-a3ea-a2b02b6a2361.png">
 
 If you have any questions, feel free to send me an email at ce347@exeter.ac.uk, or contact me on my website at [callum-evans.co.uk](https://callum-evans.co.uk/)
 
@@ -27,7 +27,7 @@ The model uses a dataset that covers the over 9,500 wards in England, Wales, Sco
 
 However, once re-combined to the constituency-level, there is a small difference between the real results and the model results, as shown in the table below:
 
-![difference table](https://github.com/stebey/UK_redistricter/images/results/diff_table.png?raw=true)
+<img width="500" alt="diff_table" src="https://user-images.githubusercontent.com/62618224/161809783-ac13c34f-ce49-4381-bb4b-b08fcf13165b.png">
 
 GeoPackage files containing the boundaries for each country are also required in order to map solutions. In which case, England and Wales use the 2011 boundaries available from the ONS, Scotland uses the 2014 boundaries from Boundaries Scotland and Northern Ireland uses the 1993 boundaries from OpenDataNI.
 
@@ -55,7 +55,7 @@ The redistricter object can be defined and used within code by itself, but comma
 
 Below is a video from earlier in development showing how maps are generated. This example uses a voronoi selection method to assign wards during the selection phase.
 
-![voronoi selection](https://github.com/stebey/UK_redistricter/voronoi_selection_example.mp4?raw=true)
+https://user-images.githubusercontent.com/62618224/161809732-45e22ba9-6224-4047-8ad3-c3b2197a4363.mp4
 
 ## References
 
