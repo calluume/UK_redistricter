@@ -1,0 +1,184 @@
+{
+    "wards": {
+        "name": "",
+        "country": "",
+        "region": "",
+        "constituency_id": "",
+        "constituency_name": "",
+        "local_authority_id": "",
+        "local_authority_name": "",
+        "population": 0,
+        "ages": {
+            "0_to_17":  0,
+            "18_to_24": 0,
+            "25_to_44": 0,
+            "45_to_64": 0,
+            "65_to_85": 0,
+            "85_plus":  0
+        },
+        "education": {
+            "no_qualifications": 0,
+            "apprenticeships": 0,
+            "level_1": 0,
+            "level_2": 0,
+            "level_3": 0,
+            "level_4": 0
+        },
+        "economic_activity": {
+            "active_employed": 0,
+            "active_unemployed": 0,
+            "active_student": 0,
+            "inactive_retired": 0,
+            "inactive_student": 0,
+            "inactive_carer": 0,
+            "inactive_sick_disabled": 0,
+            "inactive_other": 0
+        },
+        "households": {
+            "total_no": 0,
+            "single_person": 0,
+            "family_65_or_over": 0,
+            "married_couple": 0,
+            "cohabiting_couple": 0,
+            "single_parent": 0,
+            "all_students": 0,
+            "other": 0
+        },
+        "ethnicity": {
+            "white": 0,
+            "mixed": 0,
+            "asian_asian_british": 0,
+            "black_african_caribbean_black_british": 0,
+            "other": 0
+        },
+        "election_results": {
+            "electorate": 0,
+            "turnout": 0,
+            "registry_percent": 0,
+            "vote_share": {}
+        },
+        "geography": {
+            "area": 0,
+            "perimeter": 0,
+            "centroid": [
+                0,
+                0
+            ],
+            "bounds": {
+                "north": 0,
+                "south": 0,
+                "east": 0,
+                "west": 0
+            },
+            "adjacencies": []
+        }
+    },
+    "constituencies": {
+        "name": "",
+        "country": "",
+        "region": "",
+        "is_speaker_seat": false,
+        "is_protected": false,
+        "failed_wards": 0,
+        "population": 0,
+        "ages": {
+            "0_to_17":  0,
+            "18_to_24": 0,
+            "25_to_44": 0,
+            "45_to_64": 0,
+            "65_to_85": 0,
+            "85_plus":  0
+        },
+        "education": {
+            "no_qualifications": 0,
+            "apprenticeships": 0,
+            "level_1": 0,
+            "level_2": 0,
+            "level_3": 0,
+            "level_4": 0
+        },
+        "economic_activity": {
+            "active_employed": 0,
+            "active_unemployed": 0,
+            "active_student": 0,
+            "inactive_retired": 0,
+            "inactive_student": 0,
+            "inactive_carer": 0,
+            "inactive_sick_disabled": 0,
+            "inactive_other": 0
+        },
+        "households": {
+            "total_no": 0,
+            "single_person": 0,
+            "family_65_or_over": 0,
+            "married_couple": 0,
+            "cohabiting_couple": 0,
+            "single_parent": 0,
+            "all_students": 0,
+            "other": 0
+        },
+        "ethnicity": {
+            "white": 0,
+            "mixed": 0,
+            "asian_asian_british": 0,
+            "black_african_caribbean_black_british": 0,
+            "other": 0
+        },
+        "election_results": {
+            "electorate": 0,
+            "turnout": 0,
+            "registry_percent": 0,
+            "vote_share": {}
+        },
+        "geography": {
+            "area": 0,
+            "perimeter": 0,
+            "centroid": [
+                0,
+                0
+            ],
+            "bounds": {
+                "north": 0,
+                "south": 0,
+                "east": 0,
+                "west": 0
+            }
+        },
+        "wards": []
+    },
+    "England": {
+        "conservatives": 0,
+        "labour": 0,
+        "liberal_democrats": 0,
+        "ukip": 0,
+        "green": 0,
+        "other_parties": 0
+    },
+    "Wales": {
+        "conservatives": 0, "labour": 0,
+        "liberal_democrats": 0,
+        "ukip": 0,
+        "green": 0,
+        "plaid_cymru": 0,
+        "other_parties": 0
+    },
+    "Scotland": {
+        "conservatives": 0,
+        "labour": 0,
+        "liberal_democrats": 0,
+        "ukip": 0,
+        "green": 0,
+        "snp": 0,
+        "other_parties": 0
+    },
+    "Northern Ireland": {
+        "conservatives": 0,
+        "green": 0,
+        "dup": 0,
+        "sinn_fein": 0,
+        "sdlp": 0,
+        "uup": 0,
+        "alliance": 0,
+        "other_parties": 0
+    }
+}
