@@ -1,12 +1,15 @@
 import json, copy, math, sys
+
 import numpy as np
 import random as rnd
 import networkx as nx
+
 from plotter import *
 from reporter import *
-from geopy.distance import geodesic
+
 from scipy.stats import boltzmann
 from scipy.spatial import distance
+from geopy.distance import geodesic
 
 protected_constituencies = ['W07000041', # Ynys Môn (Anglesey)
                             'S14000051', # Orkney and Shetland
@@ -32,7 +35,7 @@ class Redistricter:
         if create_plotter: self.stats_reporter = Reporter(plotter=Plotter(verbose=True), progress_bar=show_progress)
         else: self.stats_reporter = Reporter(progress_bar=show_progress)
 
-    def generate_map(self, kmax, f_m=1, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.6, compensation_factor=0.8, electorate_deviation=0.05, video_filename=None, save_final_json=True, plot_random_colours=False, compactness_stage_length=0, verbose=False):
+    def generate_map(self, kmax, f_m=1, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.7, compensation_factor=0.8, electorate_deviation=0.05, video_filename=None, save_final_json=True, plot_random_colours=False, compactness_stage_length=0, verbose=False):
 
         if video_filename != None and self.stats_reporter.plotter == None:
             print('Class REDISTRICTER WARNING: Video filename given, but \'stats_reporter\' has no \'Plotter\'.')
@@ -58,8 +61,7 @@ class Redistricter:
                                     electorate_deviation=electorate_deviation,
                                     reporter=self.stats_reporter)
        
-        self.f_alpha = f_alpha
-        self.f_beta = f_beta
+        self.f_alpha, self.f_beta = f_alpha, f_beta
         initial_fitness, initial_fairness, initial_compactness, initial_results = initial_solution.evaluate(self.f_alpha, self.f_beta, run_election=True)
         if verbose:
             print('Initial solution:\n  Fitness: {0}\n  Fairness: {1}\n  Compactness: {2}\n'.format(round(initial_fitness, 6), round(initial_fairness, 6), round(initial_compactness, 6)))
@@ -68,7 +70,7 @@ class Redistricter:
         random_colours = None
         if plot_random_colours:
             random_colours = {}
-            for constituency in self.constituencies.keys(): random_colours[constituency] = "#%06x" % random.randint(0, 0xFFFFFF)
+            for constituency in self.constituencies.keys(): random_colours[constituency] = "#%06x" % rnd.randint(0, 0xFFFFFF)
 
         if video_filename != None and self.stats_reporter.plotter != None:
             self.stats_reporter.record_video_frame(self.wards, self.constituencies, 0, text='Initial Solution', random_colours=random_colours, frame_repeats=3)
@@ -80,6 +82,9 @@ class Redistricter:
         kmax += compactness_stage_length
         no_changes = math.inf
 
+        if compactness_stage_length > 0: stage_text = "(1st Stage)"
+        else: stage_text = ""
+        
         self.stats_reporter.kmax = kmax
         self.stats_reporter.start_time = time.time()
         self.stats_reporter.update_stats([initial_fitness, initial_fairness, initial_compactness], initial_results['national_votes'], k=k)
@@ -92,7 +97,7 @@ class Redistricter:
                                         self.probability_matrix,
                                         self.distance_matrix,
                                         protected_constituencies=self.protected_constituencies,
-                                        selection_method='hybrid-selection',
+                                        selection_method='acceptance-selection',
                                         electoral_quota=electoral_quota,
                                         electorate_deviation=electorate_deviation,
                                         selection_threshold=0.9,
@@ -111,22 +116,26 @@ class Redistricter:
 
             k += 1
 
-            self.stats_reporter.update_stats([current_fitness, current_wvs, current_lwr], current_results['national_votes'], no_changes=no_changes, k=k)
+            self.stats_reporter.update_stats([current_fitness, current_wvs, current_lwr], current_results['national_votes'], no_changes=no_changes, k=k, stage_text=stage_text)
             self.wards, self.constituencies = current_solution.wards, current_solution.constituencies
 
             if video_filename != None and self.stats_reporter.plotter != None:
-                self.stats_reporter.record_video_frame(self.wards, self.constituencies, k, text='Iteration: {0}, Fitness: {1}'.format(k, round(current_fitness, 4)), random_colours=random_colours)
+                self.stats_reporter.record_video_frame(self.wards, self.constituencies, k, text='Iteration: {0}, Fitness: {1} {2}'.format(k, round(current_fitness, 4), stage_text), random_colours=random_colours)
 
             if no_changes == 0: print('\nNo changes were made during local search!')
 
-            if compactness_stage_length != 0 and k == kmax - compactness_stage_length: self.f_alpha, self.f_beta = 0, 1
+            if compactness_stage_length != 0 and k == kmax - compactness_stage_length:
+                self.f_alpha, self.f_beta = 0, 1
+                stage_text = "(2nd stage)"
 
+        self.f_alpha, self.f_beta = f_alpha, f_beta
+        
         if video_filename != None and self.stats_reporter.plotter != None:
             self.stats_reporter.generate_image_video(video_filename, delete_frames=False)
 
         self.stats_reporter.close(show_plot=True, save_plot='images/graphs/performance.png', plot_title='Solution Fitness (ɑ='+str(f_alpha)+', β='+str(f_beta)+')')
         plot_results_comparison_bchart([initial_results['national_votes'], current_results['national_votes']], 'Party Seat Share Comparison: 2017 General Election and Model-generated Results', save_plot='images/graphs/prop_vote.png')
-        plot_seats_grid(current_results['national_votes'], 'horizontal', title='Parliament Seat Share', save_image='images/graphs/seat_share.png')
+        plot_seats_grid(current_results['national_votes'], 'horizontal', title='Solution: Parliament Seat Shares', save_image='images/graphs/seat_share.png')
 
         print()
         current_solution.run_election(verbose=verbose)
@@ -310,22 +319,22 @@ class Solution:
         """
         Starts group selection method, assigning wards to constituencies:
         :param method 'default': Wards are not changed from dictionary assignments
-        :param method 'hybrid-selection': Use a hybrid roulette wheel / greedy selection
+        :param method 'acceptance-selection': Assign wards using an acceptance selection method
         :param method 'random-selection': Assign wards completely at random
         :param method 'voronoi-selection': Assign wards using a voronoi tessellation
         :return bool: Denotes whether a valid method was given
         """
 
-        if method.upper() not in ['DEFAULT', 'HYBRID-SELECTION', 'RANDOM-SELECTION', 'VORONOI-SELECTION']:
-            print("\nClass SOLUTION ERROR: Invalid selection method:\n  ↳ Must be 'default', 'hybrid-selection', 'random-selection' or 'voronoi-selection', not '"+method.upper()+"'.")
+        if method.upper() not in ['DEFAULT', 'ACCEPTANCE-SELECTION', 'RANDOM-SELECTION', 'VORONOI-SELECTION']:
+            print("\nClass SOLUTION ERROR: Invalid selection method:\n  ↳ Must be 'default', 'acceptance-selection', 'random-selection' or 'voronoi-selection', not '"+method.upper()+"'.")
             exit()
-        elif method.upper() in ['HYBRID-SELECTION', 'VORONOI-SELECTION']:
+        elif method.upper() in ['ACCEPTANCE-SELECTION', 'VORONOI-SELECTION']:
             if threshold is None or not isinstance(threshold, float) or threshold > 1 or threshold < 0:
                 print("\nClass SOLUTION ERROR: Invalid selection threshold:\n  ↳ The '"+method.upper()+"' method requires a threshold value as a float (0 <= x <= 1), not type "+str(type(threshold))+".")
                 exit()
             
-        if method.upper() == 'HYBRID-SELECTION':
-            self.hybrid_selection(threshold)
+        if method.upper() == 'ACCEPTANCE-SELECTION':
+            self.acceptance_selection(threshold)
         elif method.upper() == 'RANDOM-SELECTION':
             self.random_selection()
         elif method.upper() == 'VORONOI-SELECTION':
@@ -354,10 +363,12 @@ class Solution:
 
         self.merge_constituency_wards()
 
-    def hybrid_selection(self, hybrid_threshold, verbose=False):
+    def acceptance_selection(self, hybrid_threshold):
         """
-        Assign wards either using a roulette wheel or greedy selection
-        method according to a given probability
+        Assigns wards by accepting their neighbouring wards' constituency
+        according to a probability given by the probability matrix. Initial
+        wards for each constituency are assigned using hybrid roulette
+        wheel / greedy selection.
         :param hybrid_threshold: Probability of using greedy selection
         """
         assigned_wards = []
@@ -385,7 +396,7 @@ class Solution:
         prev_length = len(assigned_wards)
         no_assignments = prev_length
         while len(assigned_wards) < len(self.ward_ids):
-            #print(len(assigned_wards), '/', len(self.ward_ids), '-', no_assignments)
+            
             for ward_index, ward_id in enumerate(self.ward_ids):
                 if ward_id in assigned_wards: continue
                 ward = self.wards[ward_id]
@@ -398,7 +409,9 @@ class Solution:
                 if len(neighbours) == 0:
                     assigned_wards.append(ward_id)
                     continue
-
+                
+                # Fetch the constituencies & probability of any neighbouring ward that has already
+                # been assigned a constituency.
                 bordering_constituencies, constituency_probabilities = [], []
                 for neighbour_id in neighbours:
                     neighbour = self.wards[neighbour_id]
@@ -425,10 +438,9 @@ class Solution:
 
                         if assigned_constituency == None:
                             assigned_constituency = possible_cons[0][0]
-                    #assigned_constituency = hybrid_select(bordering_constituencies, constituency_probabilities, hybrid_threshold)
 
                 elif no_assignments == 0:
-                    #print(ward_id, ':', ward['name'])
+                    
                     closest_wards = get_country_constituency_probabilities(self.ward_ids, self.distance_matrix[ward_index], ward['country'], order_by_val=True)
                     
                     for close_ward_id, distance in closest_wards:
@@ -455,8 +467,6 @@ class Solution:
                 print("\nClass SOLUTION ERROR: Constituency has not been assigned any wards.\n  ↳ Constituency: "+constituency['name']+" ("+constituency_id+").")
                 exit()
         self.merge_constituency_wards()
-
-
 
     def voronoi_selection(self, hybrid_threshold, voronoi_threshold=6, contiguity_threshold=10):
         """
@@ -1143,10 +1153,13 @@ if __name__ == "__main__":
     -v:        Run the program verbose
     -rcolours: Use random constituency colours in plots
     
-    -vf <filename>  Create a video with the given filename
-    -k <iterations> Run the simulation for k iterations
-    -falpha <alpha> Set the alpha value for fitness calculations (fairness)
-    -fbeta <beta>   Set the beta value for fitness calculations (compactness)
+    -vf <filename>      Create a video with the given filename
+    -k <iterations>     Number of iterations for the first optimisation phase (main phase)
+    -c <iterations>     Number of iterations for the second optimisation phase, where alpha=0 and beta=1 (default 0)
+    -falpha <alpha>     Set the alpha value for fitness calculations (fairness)
+    -fbeta <beta>       Set the beta value for fitness calculations (compactness)
+    -ims <improvements> Set the number of improvements during the local search phase
+    -seed <rnd_seed>    Sets the random seed for the model
     """
     verbose = '-v' in sys.argv
     skip_plotter = '-m' not in sys.argv

@@ -1,6 +1,7 @@
+from plotter import *
+
 import cv2, time, os.path, csv
 from os import remove as delete_frame
-from plotter import *
 from datetime import datetime, timedelta
 
 party_colours = {'conservatives': ['#0087DC', 'Blues'],
@@ -95,7 +96,7 @@ class Reporter:
             for frame in self.maps:
                 delete_frame(frame)
 
-    def update_stats(self, fitness_metrics, vote_shares=None, no_changes=None, k=None):
+    def update_stats(self, fitness_metrics, vote_shares=None, no_changes=None, k=None, stage_text=""):
         if k != None:
             self.k = k
         if self.log_writer != None:
@@ -112,7 +113,7 @@ class Reporter:
             self.logs.append(curr_log)
 
         if self.generate_progress_bar:
-            generate_progress_bar(self.k, self.kmax, 'k: {0}/{1} ({2}), fitness: {3} '.format(self.k, self.kmax, str(timedelta(seconds=int(time.time() - self.start_time))), round(fitness_metrics[0], 6)), prefix='Progress: ')
+            generate_progress_bar(self.k, self.kmax, 'k: {0}/{1} ({2}), fitness: {3} {4}'.format(self.k, self.kmax, str(timedelta(seconds=int(time.time() - self.start_time))), round(fitness_metrics[0], 6), stage_text), prefix='Progress: ')
         if self.k == self.kmax: print()
 
     def close(self, show_plot=True, plot_title=None, save_plot=None, verbose=True):

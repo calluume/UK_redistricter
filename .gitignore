@@ -1,5 +1,6 @@
 *.csv
 *.npy
-images/video_frames/*.png
+images/video_frames/*
+images/graphs/*
 videos/*.mp4
 plot.py

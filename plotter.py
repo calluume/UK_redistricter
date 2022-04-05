@@ -1,12 +1,14 @@
-import json, os, sys, math, cv2
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pandas as pd
+import sys, math
+
 import numpy as np
-import random
+import pandas as pd
+import geopandas as gpd
+
 from PIL import Image, ImageDraw, ImageFont
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 party_colours = {'conservatives': ['#0087DC', 'Blues'],
                  'labour': ['#DC241f', 'Reds'],
@@ -318,8 +320,8 @@ def plot_seats_grid(results, rotation='horizontal', cols=13, seat_radius=60, sea
         image_height = margin[1] + margin[3] + ((seat_radius * 2) * n_cols) + (seat_spacing * (n_cols - 1))
     
     image_dimensions = (image_width, image_height)
-    image = Image.new('RGBA', image_dimensions, "WHITE")
-    draw = ImageDraw.Draw(image)
+    grid_image = Image.new('RGBA', image_dimensions, "WHITE")
+    draw = ImageDraw.Draw(grid_image)
     
     if title != None:
         title_location = ((image_width - title_width) / 2, title_height / 2)
@@ -363,9 +365,9 @@ def plot_seats_grid(results, rotation='horizontal', cols=13, seat_radius=60, sea
             if rotation == 'vertical': coors = (coors[0] + (seat_radius * 2) + seat_spacing, coors[1])
             elif rotation == 'horizontal': coors = (coors[0], coors[1] + (seat_radius * 2) + seat_spacing)
 
-    if show_image: image.show()
+    if show_image: grid_image.show()
     if save_image != None:
-        Image.save(save_image)
+        grid_image.save(save_image)
 
 def get_text_dimensions(text_string, font):
     _, descent = font.getmetrics()
