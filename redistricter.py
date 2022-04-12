@@ -18,7 +18,7 @@ protected_constituencies = ['W07000041', # Ynys Môn (Anglesey)
 
 class Redistricter:
 
-    def __init__(self, data_filepath, create_plotter=True, show_progress=True):
+    def __init__(self, data_filepath, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', verbose=True):
         with open(data_filepath, 'r') as wards_file:
             data = json.load(wards_file)
             self.wards = data['wards']
@@ -32,11 +32,14 @@ class Redistricter:
 
         self.generate_matrices()
 
-        if create_plotter: self.stats_reporter = Reporter(plotter=Plotter(verbose=True), progress_bar=show_progress)
-        else: self.stats_reporter = Reporter(progress_bar=show_progress)
+        self.stats_reporter = Reporter(progress_bar=show_progress, log_file_location=log_file_location)
+        if create_plotter: self.stats_reporter.plotter = Plotter(verbose=verbose)
 
-    def generate_map(self, kmax, f_m=1, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.7, compensation_factor=0.8, electorate_deviation=0.05, video_filename=None, save_final_json=True, plot_random_colours=False, compactness_stage_length=0, verbose=False):
+        self.results_folder = results_folder
 
+    def generate_map(self, kmax, f_m=1, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.7, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, save_final_json=False, plot_random_colours=False, show_plots=True, final_map_location=None, verbose=False):
+
+        if self.stats_reporter != None: self.stats_reporter.save_parameters(f_alpha, f_beta, improvements, reward_factor, penalisation_factor, compensation_factor, compactness_stage_length)
         if video_filename != None and self.stats_reporter.plotter == None:
             print('Class REDISTRICTER WARNING: Video filename given, but \'stats_reporter\' has no \'Plotter\'.')
 
@@ -130,18 +133,20 @@ class Redistricter:
 
         self.f_alpha, self.f_beta = f_alpha, f_beta
         
-        if video_filename != None and self.stats_reporter.plotter != None:
-            self.stats_reporter.generate_image_video(video_filename, delete_frames=False)
+        if self.stats_reporter.plotter != None:
+            if video_filename != None:
+                self.stats_reporter.generate_image_video(video_filename, delete_frames=False)
+            if final_map_location != None:
+                self.stats_reporter.plotter.plot_ward_party_support_map(self.wards, self.constituencies, metric='winner', value_type='constituency', image_savefile=final_map_location, random_colours=random_colours)
 
-        self.stats_reporter.close(show_plot=True, save_plot='images/graphs/performance.png', plot_title='Solution Fitness (ɑ='+str(f_alpha)+', β='+str(f_beta)+')')
-        plot_results_comparison_bchart([initial_results['national_votes'], current_results['national_votes']], 'Party Seat Share Comparison: 2017 General Election and Model-generated Results', save_plot='images/graphs/prop_vote.png')
-        plot_seats_grid(current_results['national_votes'], 'horizontal', title='Solution: Parliament Seat Shares', save_image='images/graphs/seat_share.png')
+        self.stats_reporter.close(show_plot=show_plots, save_plot=self.results_folder+'performance.png', plot_title='Solution Fitness (ɑ='+str(f_alpha)+', β='+str(f_beta)+')', verbose=verbose)
+        plot_results_comparison_bchart([initial_results['national_votes'], current_results['national_votes']], 'Party Seat Share Comparison: 2017 General Election and Model-generated Results', save_plot=self.results_folder+'prop_vote.png', show_plot=show_plots)
+        plot_seats_grid(current_results['national_votes'], 'horizontal', title='Solution: Parliament Seat Shares', save_image=self.results_folder+'seat_share.png', show_image=show_plots)
 
-        print()
         current_solution.run_election(verbose=verbose)
 
         if save_final_json:
-            current_solution.save_wards_constituencies('data/final_map.json')
+            current_solution.save_wards_constituencies(self.results_folder+'final_map.json')
 
     def update_probabilities(self, new_solution, alpha, beta, gamma, clip_vals=True):
         """
@@ -290,6 +295,8 @@ class Solution:
         :param countries: Countries to use for model
         :param reporter: Statistics reporter
         """
+
+        self.reporter = reporter
         
         self.protected_constituencies = protected_constituencies
         self.proportional_votes = proportional_votes
@@ -312,8 +319,6 @@ class Solution:
         self.area_electorate_threshold = area_electorate_threshold
 
         self.assign_ward_constituencies(selection_method, selection_threshold)
-
-        self.reporter = reporter
 
     def assign_ward_constituencies(self, method='default', threshold=None):
         """

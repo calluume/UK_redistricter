@@ -4,3 +4,5 @@ images/video_frames/*
 images/graphs/*
 videos/*.mp4
 plot.py
+evaluater.py
+results/

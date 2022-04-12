@@ -20,7 +20,7 @@ party_colours = {'conservatives': ['#0087DC', 'Blues'],
                 }
 
 class Reporter:
-    def __init__(self, plotter=None, create_log=True, progress_bar=False):
+    def __init__(self, plotter=None, progress_bar=False, log_file_location='data/logs/'):
         self.no_func_evals = 0
 
         self.maps = []
@@ -32,9 +32,9 @@ class Reporter:
         self.kmax = 0
 
         self.logs = []
-        if create_log:
+        if log_file_location != None:
             now = datetime.now()
-            self.log_filename = now.strftime("data/logs/log_%Y.%d.%m_%H.%M.%S.csv")
+            self.log_filename = now.strftime(log_file_location+"log_%Y.%m.%d_%H.%M.%S.csv")
             self.log_file = open(self.log_filename, 'w')
             self.log_writer = csv.writer(self.log_file)
             header = ['k', 'func_eval', 'fitness', 'fairness', 'compactness', 'no_changes']
@@ -114,7 +114,7 @@ class Reporter:
 
         if self.generate_progress_bar:
             generate_progress_bar(self.k, self.kmax, 'k: {0}/{1} ({2}), fitness: {3} {4}'.format(self.k, self.kmax, str(timedelta(seconds=int(time.time() - self.start_time))), round(fitness_metrics[0], 6), stage_text), prefix='Progress: ')
-        if self.k == self.kmax: print()
+            if self.k == self.kmax: print()
 
     def close(self, show_plot=True, plot_title=None, save_plot=None, verbose=True):
         """
@@ -122,18 +122,45 @@ class Reporter:
         """
 
         if self.log_writer != None: self.log_file.close()
-        end_time = time.time()
+        self.end_time = time.time()
         if verbose:
             initial = self.logs[0]
             results = self.logs[-1]
             print("\nFinal result:\n  Fitness: {0} ({1:+})\n  Fairness: {2} ({3:+})\n  Compactness: {4} ({5:+})".format(round(results[2], 6), round(results[2] - initial[2], 3), round(results[3], 6), round(results[3] - initial[3], 3),round(results[4], 6), round(results[4] - initial[2], 3)))
-            print("\n  Time: {0}\n  Iterations: {1} ({2} /itr)".format(str(timedelta(seconds=round(end_time - self.start_time))),
+            print("\n  Time: {0}\n  Iterations: {1} ({2} /itr)".format(str(timedelta(seconds=round(self.end_time - self.start_time))),
                                                                        self.k,
-                                                                       str(timedelta(seconds=round((end_time - self.start_time)/(self.k))))))
+                                                                       str(timedelta(seconds=round((self.end_time - self.start_time)/(self.k))))))
 
         plot_performance(self.logs, show_plot=show_plot, title=plot_title, save_plot=save_plot)
 
         return
+
+    def save_parameters(self, f_alpha, f_beta, improvements, reward_factor, penalisation_factor, compensation_factor, compactness_stage_length):
+        self.f_alpha = f_alpha
+        self.f_beta = f_beta
+        self.improvements = improvements
+        self.reward_factor = reward_factor
+        self.penalisation_factor = penalisation_factor
+        self.compensation_factor = compensation_factor
+        self.compactness_stage_length = compactness_stage_length
+
+    def save_summary(self, results_location='results/'):
+        initial = self.logs[0]
+        results = self.logs[-1]
+
+        summary_file_content = ["Execution completed:",
+                                "Time: {0}, Iterations: {1} ({2} /itr)".format(str(timedelta(seconds=round(self.end_time - self.start_time))), self.k, str(timedelta(seconds=round((self.end_time - self.start_time)/(self.k))))),
+                                "", "Final Result:",
+                                "Fitness: {0} ({1:+}), Fairness: {2} ({3:+}), Compactness: {4} ({5:+})".format(round(results[2], 6), round(results[2] - initial[2], 3), round(results[3], 6), round(results[3] - initial[3], 3),round(results[4], 6), round(results[4] - initial[2], 3)),
+                                "", "Parameters:",
+                                "alpha = {0}, beta = {1}".format(self.f_alpha, self.f_beta),
+                                "reward factor = {0}".format(self.reward_factor),
+                                "penalisation factor = {0}".format(self.penalisation_factor),
+                                "compensation factor = {0}".format(self.compensation_factor),
+                                "local search steps = {0}, compactness stage length = {1}".format(self.improvements, self.compactness_stage_length)]
+
+        with open(results_location+'summary.txt', 'w') as summary_file:
+            summary_file.writelines(summary_file_content)
         
 def get_unique_video_filename(video_filename):
 

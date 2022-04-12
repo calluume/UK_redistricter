@@ -167,10 +167,9 @@ class Plotter:
             height, width = image_size[1], image_size[0]
             fig.set_size_inches(width, height)
             plt.savefig(image_savefile, dpi=dpi)
-            plt.close()
         else:
             plt.show(block=True)
-            plt.close()
+        plt.close()
 
         if verbose: print('Done!')
 
@@ -252,12 +251,14 @@ def plot_ward_statistic_map(wards, category, statistic=None, countries=['England
 
     if verbose: print('Done!')
 
+    plt.close()
+
 def plot_results_comparison_bchart(results_dicts, title, series_labels=['Model Seat Share (%)', '2017 Seat Share (%)', 'Proportional Vote (%)'], show_plot=True, save_plot=None):
 
     parties = list(results_dicts[0].keys())
     bchart_series = []
     
-    bchart_series.append([results_dicts[1][party][0] for party in parties])
+    if len(results_dicts) > 1: bchart_series.append([results_dicts[1][party][0] for party in parties])
     bchart_series.append([results_dicts[0][party][0] for party in parties])
     bchart_series.append([results_dicts[0][party][3] for party in parties])
 
@@ -301,6 +302,8 @@ def plot_results_comparison_bchart(results_dicts, title, series_labels=['Model S
     if show_plot: plt.show(block=True)
     if save_plot != None and save_plot.endswith('png'):
         fig.savefig(save_plot, dpi=400)
+
+    plt.close()
 
 def plot_seats_grid(results, rotation='horizontal', cols=13, seat_radius=60, seat_spacing=60, majority_spacing=1000, margin=(300, 300, 300, 300), title=None, show_image=True, save_image='images/graphs/parliament_seats.png'):
     no_seats = sum([results[party][0] for party in results.keys()])
@@ -448,6 +451,8 @@ def plot_performance(logs, show_plot=True, title=None, save_plot=None, plot_for_
     if show_plot: plt.show(block=True)
     if save_plot != None and save_plot.endswith('png'):
         fig.savefig(save_plot, dpi=200)
+
+    plt.close()
 
 def print_results(results):
     rows = []
