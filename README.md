@@ -67,7 +67,7 @@ will run for 12 iterations (10 for the first stage and 2 more for the second sta
 
 Below is a video from earlier in development showing how maps are generated. This example uses a voronoi selection method to assign wards during the selection phase.
 
-https://user-images.githubusercontent.com/62618224/161809732-45e22ba9-6224-4047-8ad3-c3b2197a4363.mp4
+https://user-images.githubusercontent.com/62618224/163045346-c961d82d-4b10-48a1-a05b-b6c0b9b35801.mp4
 
 ## References
 
