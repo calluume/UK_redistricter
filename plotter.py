@@ -26,16 +26,16 @@ party_colours = {'conservatives': ['#0087DC', 'Blues'],
                 }
 
 class Plotter:
-    def __init__(self, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, verbose=False):
+    def __init__(self, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, boundary_files_location='../datasets/wards/boundaries/', verbose=False):
         country_dataframes = []
         if verbose: print('PLOTTER:')
         for country in countries:
             if verbose: print('  ↳ Reading', country, 'boundaries file...')
 
-            if country == 'England': country_file = '../datasets/wards/boundaries/eng_wards.gpkg'
-            if country == 'Scotland': country_file = '../datasets/wards/boundaries/sco_wards.gpkg'
-            if country == 'Wales': country_file = '../datasets/wards/boundaries/wa_wards.gpkg'
-            if country == 'Northern Ireland': country_file = '../datasets/wards/boundaries/ni_wards.gpkg'
+            if country == 'England': country_file = boundary_files_location+'eng_wards.gpkg'
+            if country == 'Scotland': country_file = boundary_files_location+'sco_wards.gpkg'
+            if country == 'Wales': country_file = boundary_files_location+'wa_wards.gpkg'
+            if country == 'Northern Ireland': country_file = boundary_files_location+'ni_wards.gpkg'
 
             if len(countries) != 1:
                 country_dataframe = gpd.read_file(country_file)
@@ -173,85 +173,67 @@ class Plotter:
 
         if verbose: print('Done!')
 
-def plot_ward_statistic_map(wards, category, statistic=None, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, verbose=True):
-    """
-    Plots the demographic data for each ward onto a map.
-    :param wards: Wards dictionary
-    :param category: Desired statistic category (ie. age)
-    :param statistic: Desired statistic (ie. 18_to_24)
-    :param countries: Countries to plot data for, defaults to all
-                      (must intersect with regions)
-    :param regions: Regions to plot data for, defaults to all
-                    (must intersect with countries)
-    """
+    def plot_ward_statistic_map(self, wards, category, statistic=None, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, plot_title=None, save_plot=None, show_plot=True, verbose=True):
+        """
+        Plots the demographic data for each ward onto a map.
+        :param wards: Wards dictionary
+        :param category: Desired statistic category (ie. ages)
+        :param statistic: Desired statistic (ie. 18_to_24)
+        :param countries: Countries to plot data for, defaults to all
+                          (must intersect with regions)
+        :param regions: Regions to plot data for, defaults to all
+                        (must intersect with countries)
+        :param plot_title: Title displayed on map
+        :param save_plot: Plot image save file name
+        :param show_plot: Bool denoting whether to display plot
+        """
+        rows = []
+        if verbose: print('Reading '+category.replace("_", " ")+' data...')
+        for key in wards.keys():
+            ward = wards[key]
+            if ward['country'] in countries:
 
-    rows = []
-    if verbose: print('Reading '+category.replace("_", " ")+' data...')
-    for key in wards.keys():
-        ward = wards[key]
-        if ward['country'] in countries:
+                value = ward[category]
+                if statistic != None:
+                    if type(value) is dict and statistic in value.keys():
+                        value = value[statistic] * 100
+                    else:
+                        print('Invalid statistic:', statistic)
+                        exit()
 
-            value = ward[category]
-            if statistic != None:
-                if type(value) is dict and statistic in value.keys():
-                    value = value[statistic]
-                else:
-                    print('Invalid statistic:', statistic)
-                    exit()
+                rows.append([key, value, ward['region']])
+        
+        map_data = pd.DataFrame(rows, columns=["wd11cd", category, 'region'])
 
-            rows.append([key, value, ward['region']])
-    
-    map_data = pd.DataFrame(rows, columns=["wd11cd", category, 'region'])
+        wards_map = self.uk_map.merge(map_data, left_on="wd11cd", right_on="wd11cd")
+        if verbose:
+            print('\nData collected!')
+            print(wards_map.head())
+        
+        if regions != None:
+            region_string = ''.join('"'+str(x)+'", ' for x in regions)
+            region_string = "["+region_string[:-2]+"]"
+            wards_map = wards_map.query('region in '+region_string)
 
-    country_dataframes = []
-    for country in countries:
-        if verbose: print('Reading', country, 'boundaries file...')
+        if verbose and regions != None: print(wards_map.head())
+        if verbose: print('Plotting map...')
+        
+        fig, ax = plt.subplots(1, 1)
+        plt.axis('off')
+        if plot_title != None:
+            plt.title(plot_title)  
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="4%", pad=0)
 
-        if country == 'England': country_file = '../datasets/wards/boundaries/eng_wards.gpkg'
-        if country == 'Scotland': country_file = '../datasets/wards/boundaries/sco_wards.gpkg'
-        if country == 'Wales': country_file = '../datasets/wards/boundaries/wa_wards.gpkg'
-        if country == 'Northern Ireland': country_file = '../datasets/wards/boundaries/ni_wards.gpkg'
+        wards_map.plot(column=category, ax=ax, legend=True, cax=cax)
+        if show_plot:
+            plt.show(block=True)
+        if save_plot != None:
+            plt.savefig(save_plot)
 
-        if len(countries) != 1:
-            country_dataframe = gpd.read_file(country_file)
-            country_dataframes.append(country_dataframe)
-        else:
-            uk = gpd.read_file(country_file)
+        if verbose: print('Done!')
 
-    if len(country_dataframes) > 1:
-        uk = country_dataframes[0]
-        for i in range(1, len(country_dataframes)):
-            next_country = pd.DataFrame(country_dataframes[i])
-            uk = pd.DataFrame(uk)
-            uk = pd.concat([uk, next_country], ignore_index=True)
-            uk = gpd.GeoDataFrame(uk)
-            country_dataframes[0] = uk
-    
-        uk = country_dataframes[0]
-
-    wards_map = uk.merge(map_data, left_on="wd11cd", right_on="wd11cd")
-    if verbose:
-        print('\nData collected!')
-        print(wards_map.head())
-    
-    if regions != None:
-        region_string = ''.join('"'+str(x)+'", ' for x in regions)
-        region_string = "["+region_string[:-2]+"]"
-        wards_map = wards_map.query('region in '+region_string)
-
-    if verbose and regions != None: print(wards_map.head())
-    if verbose: print('Plotting map...')
-    
-    _, ax = plt.subplots(1, 1)
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.1)  
-
-    wards_map.plot(column=category, ax=ax, legend=True, cax=cax)
-    plt.show(block=True)
-
-    if verbose: print('Done!')
-
-    plt.close()
+        plt.close()
 
 def plot_results_comparison_bchart(results_dicts, title, series_labels=['Model Seat Share (%)', '2017 Seat Share (%)', 'Proportional Vote (%)'], show_plot=True, save_plot=None):
 

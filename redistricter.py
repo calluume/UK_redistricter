@@ -18,9 +18,18 @@ protected_constituencies = ['W07000041', # Ynys Môn (Anglesey)
 
 class Redistricter:
 
-    def __init__(self, data_filepath, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', verbose=True):
-        with open(data_filepath, 'r') as wards_file:
-            data = json.load(wards_file)
+    def __init__(self, wards_cons_file, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', boundary_files_location='../datasets/wards/boundaries/', verbose=True):
+        """
+        :param wards_cons_file: Location of ward and constituency JSON data
+        :param create_plotter: Denotes whether to create a plotter object
+        :param show_progress: Denotes whether to show a progress bar
+        :param results_folder: Folder for results/graphs output
+        :param log_file_location: Folder to write logs to
+        :param boundary_files_location: Directory containing boundary files
+        """
+
+        with open(wards_cons_file, 'r') as wards_cons_file:
+            data = json.load(wards_cons_file)
             self.wards = data['wards']
             self.constituencies = data['constituencies']
 
@@ -33,11 +42,30 @@ class Redistricter:
         self.generate_matrices()
 
         self.stats_reporter = Reporter(progress_bar=show_progress, log_file_location=log_file_location)
-        if create_plotter: self.stats_reporter.plotter = Plotter(verbose=verbose)
+        if create_plotter: self.stats_reporter.plotter = Plotter(verbose=verbose, boundary_files_location=boundary_files_location)
 
         self.results_folder = results_folder
 
-    def generate_map(self, kmax, f_m=1, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.7, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, save_final_json=False, plot_random_colours=False, show_plots=True, final_map_location=None, verbose=False):
+    def generate_map(self, kmax, f_alpha=1, f_beta=1, improvements=100, f_n=1, reward_factor=0.8, penalisation_factor=0.6, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, plot_random_colours=False, make_final_plots=True, show_plots=True, final_map_location=None, save_solution_location=None, verbose=False):
+        """
+        Generates a new constituency map using the outlined method.
+        :param kmax: Number of stage 1 iterations
+        :param f_alpha: Stage 1 fairness priority (Set to 0 in stage 2)
+        :param f_beta: Stage 1 compactness priority (Set to 1 in stage 2)
+        :param improvements: Number of steps made in the DBLS
+        :param f_n: Number of random swaps per step in the DBLS
+        :param reward_factor: Constituency reward factor for RL
+        :param penalisation_factor: Constituency penalisation factor for RL
+        :param compensation_factor: Constituency compensation factor for RL
+        :param compactness_stage_length: Number of iterations for stage 2
+        :param electorate_deviation: Allowed electorate deviation for proposed constituency
+        :param video_filename: If given, used as the filename for video creation
+        :param plot_random_colours: Denotes whether maps are plotted using random constituency colours
+        :param make_final_plots: Denotes whether to draw final plots
+        :param show_plots: Denotes whether to show plots (blocking)
+        :param final_map_location: If given, the final map is plotted
+        :param save_solution_location: If given, the final ward and constituency JSON are saved
+        """
 
         if self.stats_reporter != None: self.stats_reporter.save_parameters(f_alpha, f_beta, improvements, reward_factor, penalisation_factor, compensation_factor, compactness_stage_length)
         if video_filename != None and self.stats_reporter.plotter == None:
@@ -45,6 +73,12 @@ class Redistricter:
 
         # Calculate electoral quota (average constituency electorate),
         # and record protected constituencies
+
+        # First, we calculate the electoral quota (average constituency electorate),
+        # record any protected constituencies and generate random colours if necessary
+        if plot_random_colours: random_colours = {}
+        else: random_colours = None
+
         total_electorate = 0
         self.protected_constituencies = {}
         for constituency_key in self.constituencies.keys():
@@ -52,9 +86,12 @@ class Redistricter:
             if constituency['is_protected']: self.protected_constituencies[constituency_key] = constituency['wards']
             total_electorate += constituency['election_results']['electorate']
 
+            if plot_random_colours: random_colours[constituency] = "#%06x" % rnd.randint(0, 0xFFFFFF)
+
         electoral_quota = int(total_electorate / len(self.constituencies.keys()))
 
-        # Create initial solution, performing group selection method
+        # Create initial solution, performing default selection, which does not change
+        # ward assignments.
         initial_solution = Solution(self.wards, self.constituencies,
                                     [self.constituency_ids, self.ward_ids],
                                     self.probability_matrix, self.distance_matrix,
@@ -64,23 +101,19 @@ class Redistricter:
                                     electorate_deviation=electorate_deviation,
                                     reporter=self.stats_reporter)
        
+        # Record the initial fitness metric values, results and proportional vote shares
         self.f_alpha, self.f_beta = f_alpha, f_beta
         initial_fitness, initial_fairness, initial_compactness, initial_results = initial_solution.evaluate(self.f_alpha, self.f_beta, run_election=True)
+        self.proportional_vote = initial_solution.proportional_votes
+
         if verbose:
             print('Initial solution:\n  Fitness: {0}\n  Fairness: {1}\n  Compactness: {2}\n'.format(round(initial_fitness, 6), round(initial_fairness, 6), round(initial_compactness, 6)))
             print_results(initial_results['national_votes'])
-
-        random_colours = None
-        if plot_random_colours:
-            random_colours = {}
-            for constituency in self.constituencies.keys(): random_colours[constituency] = "#%06x" % rnd.randint(0, 0xFFFFFF)
-
+        
         if video_filename != None and self.stats_reporter.plotter != None:
             self.stats_reporter.record_video_frame(self.wards, self.constituencies, 0, text='Initial Solution', random_colours=random_colours, frame_repeats=3)
-
-        # Define the 'real, initial' proportional vote
-        self.proportional_vote = initial_solution.proportional_votes
     
+        # The total number of iterations is the 1st stage + 2nd stage
         k = 0
         kmax += compactness_stage_length
         no_changes = math.inf
@@ -88,12 +121,14 @@ class Redistricter:
         if compactness_stage_length > 0: stage_text = "(1st Stage)"
         else: stage_text = ""
         
+        # Use the stats reporter to record the run statistics
         self.stats_reporter.kmax = kmax
         self.stats_reporter.start_time = time.time()
         self.stats_reporter.update_stats([initial_fitness, initial_fairness, initial_compactness], initial_results['national_votes'], k=k)
 
         while k < kmax and no_changes != 0:
 
+            # Solutions are generated using the acceptance selection method
             current_solution = Solution(self.wards,
                                         self.constituencies,
                                         [self.constituency_ids, self.ward_ids],
@@ -109,11 +144,15 @@ class Redistricter:
 
             current_solution.run_election(verbose=False)
 
-            current_fitness, current_wvs, current_lwr, current_results = current_solution.improve_solution(f_m, self.f_alpha, self.f_beta, improvements, hillclimb=True, verbose=False)
+            # The descent-based local search is then run to improve the solution
+            current_fitness, current_wvs, current_lwr, current_results = current_solution.improve_solution(f_n, self.f_alpha, self.f_beta, improvements, hillclimb=True, verbose=False)
 
+            # The probability matrix is then updated, recording the number of changes made
             no_changes = self.update_probabilities(current_solution, alpha=reward_factor,
                                                                      beta=penalisation_factor,
                                                                      gamma=compensation_factor)
+
+            if no_changes == 0: print('\nNo changes were made during local search!')
             
             self.perform_probability_smoothing(0.8, 0.995)
 
@@ -124,8 +163,6 @@ class Redistricter:
 
             if video_filename != None and self.stats_reporter.plotter != None:
                 self.stats_reporter.record_video_frame(self.wards, self.constituencies, k, text='Iteration: {0}, Fitness: {1} {2}'.format(k, round(current_fitness, 4), stage_text), random_colours=random_colours)
-
-            if no_changes == 0: print('\nNo changes were made during local search!')
 
             if compactness_stage_length != 0 and k == kmax - compactness_stage_length:
                 self.f_alpha, self.f_beta = 0, 1
@@ -139,14 +176,15 @@ class Redistricter:
             if final_map_location != None:
                 self.stats_reporter.plotter.plot_ward_party_support_map(self.wards, self.constituencies, metric='winner', value_type='constituency', image_savefile=final_map_location, random_colours=random_colours)
 
-        self.stats_reporter.close(show_plot=show_plots, save_plot=self.results_folder+'performance.png', plot_title='Solution Fitness (ɑ='+str(f_alpha)+', β='+str(f_beta)+')', verbose=verbose)
-        plot_results_comparison_bchart([initial_results['national_votes'], current_results['national_votes']], 'Party Seat Share Comparison: 2017 General Election and Model-generated Results', save_plot=self.results_folder+'prop_vote.png', show_plot=show_plots)
-        plot_seats_grid(current_results['national_votes'], 'horizontal', title='Solution: Parliament Seat Shares', save_image=self.results_folder+'seat_share.png', show_image=show_plots)
+        if make_final_plots:
+            self.stats_reporter.close(show_plot=show_plots, save_plot=self.results_folder+'performance.png', plot_title='Solution Fitness (ɑ='+str(f_alpha)+', β='+str(f_beta)+')', verbose=verbose)
+            plot_results_comparison_bchart([initial_results['national_votes'], current_results['national_votes']], 'Party Seat Share Comparison: 2017 General Election and Model-generated Results', save_plot=self.results_folder+'prop_vote.png', show_plot=show_plots)
+            plot_seats_grid(current_results['national_votes'], 'horizontal', title='Solution: Parliament Seat Shares', save_image=self.results_folder+'seat_share.png', show_image=show_plots)
 
         current_solution.run_election(verbose=verbose)
 
-        if save_final_json:
-            current_solution.save_wards_constituencies(self.results_folder+'final_map.json')
+        if save_solution_location != None:
+            current_solution.save_wards_constituencies(save_solution_location)
 
     def update_probabilities(self, new_solution, alpha, beta, gamma, clip_vals=True):
         """
@@ -212,7 +250,6 @@ class Redistricter:
             probability_row = self.probability_matrix[i]
             max_probability_index = list(probability_row).index(max(list(probability_row)))
 
-            # changed to be if less than
             if self.probability_matrix[i][max_probability_index] > smoothing_probability:
 
                 for j in range(self.k):
@@ -234,6 +271,7 @@ class Redistricter:
         :param euclidean_distance: Denotes whether to calculate euclidean or geodesic distances
         :param save_txt: Denotes whether to save readable txt version of the distance matrix
         """
+
         self.probability_matrix = np.zeros((self.n, self.k), dtype=np.float64)
         self.distance_matrix = np.zeros((self.n, self.n), dtype=np.float64)
         val = 0
@@ -260,7 +298,7 @@ class Redistricter:
                             ward_j_centroid = self.wards[self.ward_ids[j]]['geography']['centroid']
                             if euclidean_distance: dst = distance.euclidean(ward_i_centroid, ward_j_centroid)
                             else: dst = geodesic((ward_i_centroid[1], ward_i_centroid[0]), (ward_j_centroid[1], ward_j_centroid[0])).km
-                            print(val, '-', dst)
+                            if verbose: print(val, '-', dst)
                             self.distance_matrix[i][j] = dst
                             if self.distance_matrix[j][i] == 0: self.distance_matrix[j][i] = dst
 
@@ -282,11 +320,11 @@ class Solution:
         :param constituencies: Constituencies dictionary
         :param matrix_ids: 2D array containing constituency & ward ids in the probability matrix
         :param probability_matrix: 2D numpy array containing ward-constituency assignment probabilities
-        :param distance_matrix: 
+        :param distance_matrix: 2D numpy array containing the distances between each ward
         :param selection_method: Selection method used to assign constituencies
         :param selection_threshold: Threshold value for selection method (when required)
         :param electoral_quota: Constituency average electorate
-        :param protected_constituencies:
+        :param protected_constituencies: List of protected constituencies
         :param electorate_deviation: Allowed percent deviation for constituency population
         :param max_constituency_area: Maximum allowed constituency area
         :param area_electorate_threshold: Area threshold to allow electorates below limit
@@ -582,10 +620,10 @@ class Solution:
                 
         return True
 
-    def improve_solution(self, m, alpha, beta, n_steps, max_failed_attempts=100, hillclimb=True, verbose=False):
+    def improve_solution(self, n, alpha, beta, n_steps, max_failed_attempts=100, hillclimb=True, verbose=False):
         """
         Perform simulated annealing algorithm on constituency assignments.
-        :param m: Number of "mutations" or ward swaps per iteration / movement
+        :param n: Number of "mutations" or ward swaps per iteration / movement
         :param alpha: Fairness importance (0 - 1)
         :param beta: Compactness importance (0 - 1)
         :param kmax: Maximum iterations / movements
@@ -598,10 +636,14 @@ class Solution:
         failed_attempts = 0
 
         while steps < n_steps and failed_attempts < max_failed_attempts:
-            swapped_wards, affected_countries = self.randomly_swap_n_wards(m)
+
+            # Randomly swap n wards
+            swapped_wards, affected_countries = self.randomly_swap_n_wards(n)
             
             fitness, fairness, compactness, results = self.evaluate(alpha, beta, verbose=False)
 
+            # Evaluate whether an improvement was made (specifically ensuring an increase in fairness
+            # happened in any affected country)
             if fitness > current_fitness and self.calculate_avg_sv_diff(results, affected_countries) > self.calculate_avg_sv_diff(current_results, affected_countries):
                 accepted = True
             elif not hillclimb and rnd.random() <= boltzmann.pmf(steps, 1, n_steps):
@@ -612,6 +654,7 @@ class Solution:
                 steps += 1
                 current_fitness, current_fairness, current_compactness, current_results = fitness, fairness, compactness, results
             else:
+                # If the solution was made worse, undo the changes
                 failed_attempts += 1
                 for swap in swapped_wards:
                     self.make_swap(swap[0], swap[1])
@@ -887,11 +930,12 @@ class Solution:
 
         return fitness_score, sv_difference, average_compactness, results
 
-    def merge_constituency_wards(self, merge_list=None):
+    def merge_constituency_wards(self, merge_list=None, ignore_demographics=True):
         """
         Merges a given set of constituency wards. If no list is given,
         all constituencies are merged.
         :param merge_list: List of constituencies to merge
+        :param ignore_demographics: Denotes whether to skip calculating constituency demographics from wards
         """
 
         if merge_list == None: merge_list = list(self.constituencies.keys())
@@ -907,9 +951,10 @@ class Solution:
                 ward = self.wards[ward_id]
 
                 constituency['population'] += ward['population']
-                for demographic in ['ages', 'education', 'economic_activity', 'households', 'ethnicity']:
-                    for data_key in ward[demographic].keys():
-                        constituency[demographic][data_key] += int(ward['population'] * ward[demographic][data_key])
+                if not ignore_demographics:
+                    for demographic in ['ages', 'education', 'economic_activity', 'households', 'ethnicity']:
+                        for data_key in ward[demographic].keys():
+                            constituency[demographic][data_key] += int(ward['population'] * ward[demographic][data_key])
 
                 constituency['election_results']['electorate'] += ward['election_results']['electorate']
                 constituency['election_results']['turnout'] += ward['election_results']['turnout']
@@ -953,13 +998,14 @@ class Solution:
                 exit()
             constituency['election_results']['vote_share'] = {key: value * factor for key, value in constituency['election_results']['vote_share'].items()}
 
-            for demographic in ['ages', 'education', 'economic_activity', 'ethnicity']:
-                dem_total = sum(constituency[demographic].values())
-                constituency[demographic] = {k: v / dem_total for k, v in constituency[demographic].items()}
+            if not ignore_demographics:
+                for demographic in ['ages', 'education', 'economic_activity', 'ethnicity']:
+                    dem_total = sum(constituency[demographic].values())
+                    constituency[demographic] = {k: v / dem_total for k, v in constituency[demographic].items()}
 
-            num_households = sum(constituency['households'].values()) - constituency['households']['total_no']
-            constituency['households'] = {k: v / num_households for k, v in constituency['households'].items()}
-            constituency['households']['total_no'] = num_households
+                num_households = sum(constituency['households'].values()) - constituency['households']['total_no']
+                constituency['households'] = {k: v / num_households for k, v in constituency['households'].items()}
+                constituency['households']['total_no'] = num_households
 
             self.constituencies[constituency_key] = constituency
 
