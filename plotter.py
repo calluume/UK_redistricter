@@ -58,7 +58,7 @@ class Plotter:
         self.regions = regions
         self.uk_map = uk
 
-    def plot_ward_party_support_map(self, wards, constituencies, metric, value_type, plot_cities=False, city_population_threshold=150000, image_savefile=None, image_size=(8, 6), dpi=600, random_colours=None, verbose=False):
+    def plot_ward_party_support_map(self, wards, constituencies, metric, value_type, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, plot_cities=False, plot_title=None, city_population_threshold=150000, image_savefile=None, image_size=(8, 6), dpi=600, random_colours=None, verbose=False):
         """
         Plots party support from a given ward/constituency dataset. This can be used
         to either plot the winning party at the ward/constituency level, or to plot
@@ -91,7 +91,7 @@ class Plotter:
         if verbose: print('PLOTTER: Reading ward data...')
         for key in wards.keys():
             ward = wards[key]
-            if ward['country'] in self.countries:
+            if ward['country'] in countries:
                 if random_colours == None:
                     if metric in ward['election_results']['vote_share'].keys() or metric == 'winner':
                         
@@ -135,17 +135,19 @@ class Plotter:
         if verbose:
             print('\nData collected!')
             print(wards_map.head())
-        if self.regions != None:
-            region_string = ''.join('"'+str(x)+'", ' for x in self.regions)
+        if regions != None:
+            region_string = ''.join('"'+str(x)+'", ' for x in regions)
             region_string = "["+region_string[:-2]+"]"
             wards_map = wards_map.query('region in '+region_string)
 
-        if verbose and self.regions != None: print(wards_map.head())
+        if verbose and regions != None: print(wards_map.head())
         if verbose: print('Plotting map...')
         
         if metric == 'winner' and value_type == 'constituency': constituency_map = wards_map.dissolve(by='pcon11cd')
 
         fig, ax = plt.subplots(1, 1)
+        if plot_title != None:
+            plt.title(plot_title, pad=0.8)
         fig.tight_layout()
 
         if metric in party_colours.keys():

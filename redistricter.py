@@ -24,7 +24,7 @@ class Redistricter:
         :param create_plotter: Denotes whether to create a plotter object
         :param show_progress: Denotes whether to show a progress bar
         :param results_folder: Folder for results/graphs output
-        :param log_file_location: Folder to write logs to
+        :param log_file_location: Folder to write logs to, if none, no logs are created
         :param boundary_files_location: Directory containing boundary files
         """
 
@@ -620,13 +620,20 @@ class Solution:
                 
         return True
 
-    def improve_solution(self, n, alpha, beta, n_steps, max_failed_attempts=100, hillclimb=True, verbose=False):
+    def improve_solution(self, n_steps, n, alpha, beta, failed_attempts_multiplier=2, hillclimb=True, verbose=False):
         """
         Perform simulated annealing algorithm on constituency assignments.
-        :param n: Number of "mutations" or ward swaps per iteration / movement
+        :param n_steps: Number of steps made during the improvement
+        :param n: Number of "mutations" or ward swaps per step
         :param alpha: Fairness importance (0 - 1)
         :param beta: Compactness importance (0 - 1)
-        :param kmax: Maximum iterations / movements
+        :param failed_attempts_multiplier: Defines the max number of failed attempts
+                                           (ie. rejected swaps) as n_steps * failed_attempts_multiplier
+        :param hillclimb: Denotes whether only good swaps are made (if false, uses simulated annealing)
+        :return float: Current fitness (0 <= x <= 1)
+        :return float: Current fairness (0 <= x <= 1)
+        :return float: Current compactness (0 <= x <= 1)
+        :return dict: Current results
         """
 
         self.merge_constituency_wards()
@@ -634,6 +641,7 @@ class Solution:
 
         steps = 0
         failed_attempts = 0
+        max_failed_attempts = n_steps * failed_attempts_multiplier
 
         while steps < n_steps and failed_attempts < max_failed_attempts:
 
@@ -666,12 +674,13 @@ class Solution:
 
         return current_fitness, current_fairness, current_compactness, current_results
 
-    def randomly_swap_n_wards(self, n, max_attempts=100, verbose=False):
+    def randomly_swap_n_wards(self, n, verbose=False):
         """
         Randomly swaps n wards to adjacent constituencies. Wards will stay in
         the same country and region, and contiguity should always be preserved.
         :param n: Number of ward swaps
-        :param max_attempts: Maximum number of ward swap attempts to be made
+        :return []: List containing all swaps made
+        :return []: List containing all affected countries (where swaps were made)
         """
         swapped = []
         invalid = []
@@ -1217,7 +1226,7 @@ if __name__ == "__main__":
     skip_progress = '-p' not in sys.argv
     random_colours = '-rcolours' in sys.argv
 
-    save_final_json = '-s' in sys.argv
+    save_final_json = 'final_map.json'
 
     default_iterations = 10
     iterations, improvements, compactness_stage_length, rnd_seed = get_int_arguments(['-k', '-ims', '-c', '-seed'], [default_iterations, 100, 0, None])
@@ -1232,5 +1241,5 @@ if __name__ == "__main__":
                               improvements=improvements,
                               compactness_stage_length=compactness_stage_length,
                               video_filename=video_filename,
-                              save_final_json=save_final_json, plot_random_colours=random_colours,
+                              save_solution_location=save_final_json, plot_random_colours=random_colours,
                               verbose=verbose)
