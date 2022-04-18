@@ -46,14 +46,13 @@ class Redistricter:
 
         self.results_folder = results_folder
 
-    def generate_map(self, kmax, f_alpha=1, f_beta=1, improvements=100, f_n=1, reward_factor=0.8, penalisation_factor=0.6, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, plot_random_colours=False, make_final_plots=True, show_plots=True, final_map_location=None, save_solution_location=None, verbose=False):
+    def generate_map(self, kmax, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.6, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, plot_random_colours=False, make_final_plots=True, show_plots=True, final_map_location=None, save_solution_location=None, verbose=False):
         """
         Generates a new constituency map using the outlined method.
         :param kmax: Number of stage 1 iterations
         :param f_alpha: Stage 1 fairness priority (Set to 0 in stage 2)
         :param f_beta: Stage 1 compactness priority (Set to 1 in stage 2)
         :param improvements: Number of steps made in the DBLS
-        :param f_n: Number of random swaps per step in the DBLS
         :param reward_factor: Constituency reward factor for RL
         :param penalisation_factor: Constituency penalisation factor for RL
         :param compensation_factor: Constituency compensation factor for RL
@@ -113,7 +112,8 @@ class Redistricter:
         if video_filename != None and self.stats_reporter.plotter != None:
             self.stats_reporter.record_video_frame(self.wards, self.constituencies, 0, text='Initial Solution', random_colours=random_colours, frame_repeats=3)
     
-        # The total number of iterations is the 1st stage + 2nd stage
+        # The total number of iterations is the length of the 1st stage + length 2nd stage
+        # i.e kmax = (k + compactness_stage_length)
         k = 0
         kmax += compactness_stage_length
         no_changes = math.inf
@@ -145,7 +145,7 @@ class Redistricter:
             current_solution.run_election(verbose=False)
 
             # The descent-based local search is then run to improve the solution
-            current_fitness, current_wvs, current_lwr, current_results = current_solution.improve_solution(f_n, self.f_alpha, self.f_beta, improvements, hillclimb=True, verbose=False)
+            current_fitness, current_wvs, current_lwr, current_results = current_solution.improve_solution(improvements, self.f_alpha, self.f_beta, failed_attempts_multiplier=2, hillclimb=True)
 
             # The probability matrix is then updated, recording the number of changes made
             no_changes = self.update_probabilities(current_solution, alpha=reward_factor,
@@ -620,11 +620,10 @@ class Solution:
                 
         return True
 
-    def improve_solution(self, n_steps, n, alpha, beta, failed_attempts_multiplier=2, hillclimb=True, verbose=False):
+    def improve_solution(self, n_steps, alpha, beta, failed_attempts_multiplier=2, hillclimb=True, verbose=False):
         """
         Perform simulated annealing algorithm on constituency assignments.
         :param n_steps: Number of steps made during the improvement
-        :param n: Number of "mutations" or ward swaps per step
         :param alpha: Fairness importance (0 - 1)
         :param beta: Compactness importance (0 - 1)
         :param failed_attempts_multiplier: Defines the max number of failed attempts
@@ -646,7 +645,7 @@ class Solution:
         while steps < n_steps and failed_attempts < max_failed_attempts:
 
             # Randomly swap n wards
-            swapped_wards, affected_countries = self.randomly_swap_n_wards(n)
+            swapped_wards, affected_countries = self.randomly_swap_n_wards(1)
             
             fitness, fairness, compactness, results = self.evaluate(alpha, beta, verbose=False)
 
