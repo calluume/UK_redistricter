@@ -7,5 +7,5 @@ plot.py
 evaluater.py
 data/fairest.json
 2023 results/fair_2023.json
-results/
+results/*
 eg_vs_sv/
