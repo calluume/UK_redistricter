@@ -5,4 +5,7 @@ images/graphs/*
 videos/*.mp4
 plot.py
 evaluater.py
+data/fairest.json
+2023 results/fair_2023.json
 results/
+eg_vs_sv/

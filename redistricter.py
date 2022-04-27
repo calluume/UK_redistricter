@@ -263,7 +263,7 @@ class Redistricter:
                     elif pij < 0: pij = 0
                     self.probability_matrix[i][j] = pij
 
-    def generate_matrices(self, distance_matrix_file="data/dst.npy", load_distances=True, euclidean_distance=False, save_txt=True, verbose=False):
+    def generate_matrices(self, generate_new_constituencies=False, distance_matrix_file="data/dst.npy", load_distances=True, euclidean_distance=False, save_txt=True, verbose=False):
         """
         Generates the probability and distance matrices for group selection.
         :param distance_matrix_file: Location of distance matrix file - .npy format
@@ -281,13 +281,17 @@ class Redistricter:
 
         for i in range(len(self.ward_ids)):
             ward = self.ward_ids[i]
-            constituency_id = self.wards[ward]['constituency_id']
-            if constituency_id in self.constituency_ids:
-                constituency_index = self.constituency_ids.index(constituency_id)
-                self.probability_matrix[i][constituency_index] = 1
+            if generate_new_constituencies:
+                for j in range(len(self.constituency_ids)):
+                     self.probability_matrix[i][j] = 1 / len(self.constituency_ids)
             else:
-                print('Class REDISTRICTER ERROR: Could not generate probability matrix:\n  ↳ Constituency \''+self.wards[ward]['constituency_id']+'\' not found.')
-                exit()
+                constituency_id = self.wards[ward]['constituency_id']
+                if constituency_id in self.constituency_ids:
+                    constituency_index = self.constituency_ids.index(constituency_id)
+                    self.probability_matrix[i][constituency_index] = 1
+                else:
+                    print('Class REDISTRICTER ERROR: Could not generate probability matrix:\n  ↳ Constituency \''+self.wards[ward]['constituency_id']+'\' not found.')
+                    exit()
 
             if not load_distances:
                 for j in range(len(self.ward_ids)):
@@ -301,8 +305,7 @@ class Redistricter:
                             if verbose: print(val, '-', dst)
                             self.distance_matrix[i][j] = dst
                             if self.distance_matrix[j][i] == 0: self.distance_matrix[j][i] = dst
-
-
+      
         if load_distances:
             if verbose: print('  ↳ Loading distance matrix...')
             self.distance_matrix = np.load(distance_matrix_file)
@@ -651,7 +654,7 @@ class Solution:
 
             # Evaluate whether an improvement was made (specifically ensuring an increase in fairness
             # happened in any affected country)
-            if fitness > current_fitness and self.calculate_avg_sv_diff(results, affected_countries) > self.calculate_avg_sv_diff(current_results, affected_countries):
+            if fitness >= current_fitness and self.calculate_avg_sv_diff(results, affected_countries) >= self.calculate_avg_sv_diff(current_results, affected_countries):
                 accepted = True
             elif not hillclimb and rnd.random() <= boltzmann.pmf(steps, 1, n_steps):
                 accepted = True
@@ -853,10 +856,12 @@ class Solution:
 
     def is_contiguous(self, constituency, ward_id=None):
         """
-        Checks whether a constituency is contiguous by checking
-        the eigenvalues of the laplacian matrix of the adjacency
-        matrix.
-        :param wards_list: List of constituency wards
+        Checks whether a constituency is contiguous, is also
+        used to ensure that a constituency would remain contiguous
+        with a specified ward removed.
+        :param constituency: Constituency dict
+        :param ward_id: Potential ward to be removed (defaults to None)
+        :return bool: Bool denoting whether the constituency is/would be contiguous
         """
 
         wards_list = constituency['wards']
@@ -865,18 +870,25 @@ class Solution:
             print("\nClass SOLUTION ERROR: Contiguity test attempted on empty ward list.")
             exit()
 
+        # Islands are not included in contiguity checks (unless
+        # the island has multiple wards)
+        non_island_wards = []
+        for ward in wards_list:
+            if len(self.wards[ward]['geography']['adjacencies']) != 0:
+                non_island_wards.append(ward)
+
         adjacency_matrix = []
-        for i in range(len(wards_list)):
+        for i in range(len(non_island_wards)):
 
-            if wards_list[i] == ward_id: continue
+            if non_island_wards[i] == ward_id: continue
             matrix_row = []
-            for j in range(len(wards_list)):
+            for j in range(len(non_island_wards)):
 
-                if wards_list[j] == ward_id: continue
+                if non_island_wards[j] == ward_id: continue
 
                 if i == j: matrix_row.append(1)
-                elif wards_list[i] in self.wards[wards_list[j]]['geography']['adjacencies']: matrix_row.append(1)
-                elif wards_list[j] in self.wards[wards_list[i]]['geography']['adjacencies']: matrix_row.append(1)
+                elif non_island_wards[i] in self.wards[non_island_wards[j]]['geography']['adjacencies']: matrix_row.append(1)
+                elif non_island_wards[j] in self.wards[non_island_wards[i]]['geography']['adjacencies']: matrix_row.append(1)
                 else: matrix_row.append(0)
 
             adjacency_matrix.append(matrix_row)
@@ -934,7 +946,7 @@ class Solution:
 
         average_compactness = sum(compactnesses) / len(compactnesses)
 
-        fitness_score = ((sv_difference*alpha) + (average_compactness*beta))/(alpha+beta)
+        fitness_score = ((sv_difference * alpha) + (average_compactness * beta)) / (alpha + beta)
 
         return fitness_score, sv_difference, average_compactness, results
 
@@ -1225,7 +1237,7 @@ if __name__ == "__main__":
     skip_progress = '-p' not in sys.argv
     random_colours = '-rcolours' in sys.argv
 
-    save_final_json = 'final_map.json'
+    save_final_json = 'results/final_map.json'
 
     default_iterations = 10
     iterations, improvements, compactness_stage_length, rnd_seed = get_int_arguments(['-k', '-ims', '-c', '-seed'], [default_iterations, 100, 0, None])
