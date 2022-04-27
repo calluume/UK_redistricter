@@ -65,9 +65,11 @@ will run for 12 iterations (10 for the first stage and 2 more for the second sta
 
 ## Examples
 
-Below is a video from earlier in development showing how maps are generated. This example uses a voronoi selection method to assign wards during the selection phase.
+Below is a video of the algorithm generating boundaries from scratch, done by setting `generate_new_constituencies=True` in the `generate_matrices` function.
 
-https://user-images.githubusercontent.com/62618224/163045346-c961d82d-4b10-48a1-a05b-b6c0b9b35801.mp4
+<p align="center" width="100%">
+    <img width="600" alt="south" src="https://user-images.githubusercontent.com/62618224/165603799-d1cb578b-2fe5-4aec-b0fd-06a55f849087.gif">
+</p>
 
 ## References
 
