@@ -1,0 +1,99 @@
+{
+    "default_params": {
+        "falpha": {
+            "name": "Alpha",
+            "desc": "Fairness priority value for fitness calculations.",
+            "flag": "-falpha",
+            "type": "float",
+            "range": [0.0, 1.0],
+            "val": 1.0
+        },
+        "fbeta": {
+            "name": "Beta",
+            "desc": "Compactness priority value for fitness calculations.",
+            "flag": "-fbeta",
+            "type": "float",
+            "range": [0.0, 1.0],
+            "val": 1.0
+        },
+        "iterations_f": {
+            "name": "Iterations (stage 1)",
+            "desc": "Number of stage 1 iterations, optimising only for fairness.",
+            "flag": "-k",
+            "type": "int",
+            "val": 10
+        },
+        "iterations_c": {
+            "name": "Iterations (stage 2)",
+            "desc": "Number of stage 2 iterations, optimising only for compactness.",
+            "flag": "-c",
+            "type": "int",
+            "val": 0
+        },
+        "improvements": {
+            "name": "Improvements",
+            "desc": "Number of steps made during local search.",
+            "flag": "-ims",
+            "type": "int",
+            "val": 100
+        },
+        "skip_plotter": {
+            "name": "Skip Plotter",
+            "desc": "Denotes whether to skip creating a plotter object.",
+            "flag": "-m",
+            "type": "bool",
+            "val": false
+        },
+        "skip_pbar": {
+            "name": "Skip Progress Bar",
+            "desc": "Denotes whether to skip drawing a progress bar.",
+            "flag": "-p",
+            "type": "bool",
+            "val": false
+        },
+        "show_results": {
+            "name": "Show Election Results",
+            "desc": "Denotes whether to print election results after each iteration.",
+            "flag": "-sr",
+            "type": "bool",
+            "val": false
+        },
+        "plot_rcolours": {
+            "name": "Plot Random Colours",
+            "desc": "Denotes whether to plot maps using random constituency colours.",
+            "flag": "-rcolours",
+            "type": "bool",
+            "val": false
+        },
+        "video_file": {
+            "name": "Video Filename",
+            "desc": "Filename for map generation video.",
+            "flag": "-vf",
+            "type": "string",
+            "suffix": ".mp4",
+            "val": "none"
+        },
+        "final_map": {
+            "name": "Final Boundaries JSON",
+            "desc": "Location for final ward/constituencyJSON file.",
+            "flag": "-fm",
+            "type": "string",
+            "suffix": ".json",
+            "val": "results/final_map.json"
+        },
+        "rnd_seed": {
+            "name": "Random Seed",
+            "desc": "Algorithm random seed.",
+            "flag": "-seed",
+            "type": "int",
+            "val": "none"
+        },
+        "verbose": {
+            "name": "Verbose",
+            "desc": "Denotes whether to run verbose.",
+            "flag": "-v",
+            "type": "bool",
+            "val": false
+        }
+    }
+}

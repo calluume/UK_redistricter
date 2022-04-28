@@ -19,7 +19,7 @@ protected_constituencies = ['W07000041', # Ynys Môn (Anglesey)
 
 class Redistricter:
 
-    def __init__(self, wards_cons_file, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', boundary_files_location='../datasets/wards/boundaries/', verbose=True):
+    def __init__(self, wards_cons_file, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', boundary_files_location='../datasets/wards/boundaries/', verbose=False):
         """
         :param wards_cons_file: Location of ward and constituency JSON data
         :param create_plotter: Denotes whether to create a plotter object
@@ -1121,6 +1121,8 @@ class Solution:
 if __name__ == "__main__":
     """
     Command Line arguments:
+    -h:        Print manual
+    
     -m:        Skip creating a plotter object
     -p:        Force no progress bar
     -sr:       Show election results with each function evaluation
@@ -1135,25 +1137,20 @@ if __name__ == "__main__":
     -ims <improvements> Set the number of improvements during the local search phase
     -seed <rnd_seed>    Sets the random seed for the model
     """
-    verbose = '-v' in sys.argv
-    skip_plotter = '-m' not in sys.argv
-    skip_progress = '-p' not in sys.argv
-    random_colours = '-rcolours' in sys.argv
 
-    save_final_json = 'results/final_map.json'
+    parameters = get_parameters('data/default_parameters.json')
 
-    default_iterations = 10
-    iterations, improvements, compactness_stage_length, rnd_seed = get_int_arguments(['-k', '-ims', '-c', '-seed'], [default_iterations, 100, 0, None])
+    rnd.seed(parameters['rnd_seed'])
 
-    rnd.seed(rnd_seed)
-    video_filename = get_video_filename('-vf')
+    redistricter = Redistricter('data/wards_constituencies.json',
+                                create_plotter=parameters['skip_plotter'],
+                                show_progress=parameters['skip_pbar'],
+                                verbose=parameters['verbose'])
 
-    f_alpha, f_beta = get_float_arguments(['-falpha', '-fbeta'], [1, 1])
-
-    redistricter = Redistricter('data/wards_constituencies.json', create_plotter=skip_plotter, show_progress=skip_progress)
-    redistricter.generate_map(iterations, f_alpha=f_alpha, f_beta=f_beta,
-                              improvements=improvements,
-                              compactness_stage_length=compactness_stage_length,
-                              video_filename=video_filename,
-                              save_solution_location=save_final_json, plot_random_colours=random_colours,
-                              verbose=verbose)
+    redistricter.generate_map(parameters['iterations_f'], f_alpha=parameters['falpha'], f_beta=parameters['fbeta'],
+                              improvements=parameters['improvements'],
+                              compactness_stage_length=parameters['iterations_c'],
+                              video_filename=parameters['video_file'],
+                              save_solution_location=parameters['final_map'],
+                              plot_random_colours=parameters['plot_rcolours'],
+                              verbose=parameters['verbose'])

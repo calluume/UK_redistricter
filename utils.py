@@ -1,4 +1,4 @@
-import sys, math, copy
+import sys, math, copy, json
 
 import numpy as np
 import random as rnd
@@ -47,56 +47,115 @@ def gps_to_ecef(coors, alt=0):
 
     return [x, y, z]
 
-def get_video_filename(flag):
+def get_bool_flag(flag, default_val):
+    if flag in sys.argv: return True
+    else: return default_val
+    
+def get_string_argument(flag, default_val, name, prefix=None, suffix=None):
+    if default_val == "none": default_val = None
     if flag in sys.argv:
         args_index = sys.argv.index(flag)
         if args_index == len(sys.argv) - 1 or sys.argv[args_index + 1].startswith('-'):
-            print('Class REDISTRICTER ERROR: No filename value given:\n  ↳ \''+flag+'\' argument must be followed by a valid video filename')
-            exit()
+            print("Class REDISTRICTER ERROR: No '{0}' value given:\n  ↳ '{1}' flag must be followed by an string".format(name, flag))
+            return None
         else:
-            if sys.argv[args_index + 1].endswith('.mp4'):
-                return sys.argv[args_index + 1]
+            value = sys.argv[args_index + 1]
+            if prefix != None and not value.startswith(prefix):
+                print("Class REDISTRICTER ERROR: Invalid '{0}' value given:\n  ↳ '{1}' flag must begin with '{2}' and '{3}' is invalid.".format(name, flag, prefix, value))
+                return None
+            if suffix != None and not value.endswith(suffix):
+                print("Class REDISTRICTER ERROR: Invalid '{0}' value given:\n  ↳ '{1}' flag must end with '{2}' and '{3}' is invalid.".format(name, flag, suffix, value))
+                return None
+            return value
+    else: return default_val
+
+def get_int_arguments(flag, default_val, name, val_range=None):
+    if default_val == "none": default_val = None
+    if flag in sys.argv:
+        args_index = sys.argv.index(flag)
+        if args_index == len(sys.argv) - 1 or sys.argv[args_index + 1].startswith('-'):
+            print("Class REDISTRICTER ERROR: No '{0}' value given:\n  ↳ '{1}' flag must be followed by an int".format(name, flag))
+            return None
+        else:
+            if sys.argv[args_index + 1].isdigit():
+                value = int(sys.argv[args_index + 1])
+                if val_range != None:
+                    if (value >= val_range[0] and value <= val_range[1]): return value
+                    else:
+                        print("Class REDISTRICTER ERROR: Invalid '{0}' value given:\n  ↳ '{0}' must be 'int' in range ({1} <= x <= {2})".format(name, val_range[0], val_range[1]))
+                        return None
+                else: return value
             else:
-                print('Class REDISTRICTER ERROR: Invalid video filename given:\n  ↳ Video files are output as \'.mp4\' and \''+sys.argv[args_index + 1]+'\' is invalid.')
-                exit()
+                print("Class REDISTRICTER ERROR: Invalid '{0}' value given:\n  ↳ '{0}' must be an int, not '{1}'".format(name, sys.argv[args_index + 1]))
+                return None
+    else: return default_val
+
+def get_float_arguments(flag, default_val, name, val_range=None):
+    if default_val == "none": default_val = None
+    if flag in sys.argv:
+        args_index = sys.argv.index(flag)
+        if args_index == len(sys.argv) - 1 or sys.argv[args_index + 1].startswith('-'):
+            print("Class REDISTRICTER ERROR: No '{0}' value given:\n  ↳ '{1}' flag must be followed by a float ({2} <= x <= {3})".format(name, flag, val_range[0], val_range[1]))
+            return None
+        else:
+            value = float(sys.argv[args_index + 1])
+            if val_range != None:
+                if (value >= val_range[0] and value <= val_range[1]): return value
+                else:
+                    print("Class REDISTRICTER ERROR: Invalid '{0}' value given:\n  ↳ '{0}' must be 'int' in range ({1} <= x <= {2})".format(name, val_range[0], val_range[1]))
+                    return None
+            else: return value
+    else: return default_val
+
+def print_manual(parameter_dict):
+    left_margin = max([len(param['flag']) for param in parameter_dict.values()]) + 1
+    cross_line = " +" + ("-"*(left_margin+2)) + "+"
+    print(cross_line+"\n |"+(" "*(len(cross_line)-(len("param")+4)))+"param | UK Redistricter - Command Line Arguments\n"+cross_line)
+    for key, param in parameter_dict.items():
+        flag_margin = " " * (left_margin - len(param['flag']))
+        margin = " " * left_margin
+        flag_margin = " | " + flag_margin + param['flag'] + " | "
+        margin = " | " + margin + " | "
+        print(flag_margin + key + " [" +param['type'] + "]:")
+        if 'name' in param.keys(): print(margin + "  Parameter:\n" + margin + "    " + param['name'])
+        if 'desc' in param.keys():
+            description = param['desc']
+            if '\n' in description: description = description.replace("\n", "\n" + margin + "    ")
+            print(margin + "  Description:\n" + margin + "    " + description)
+        if 'range' in param.keys(): print(margin + "  Range: [" + str(param['range'][0]) + " - " + str(param['range'][1]) + "]")
+        if 'prefix' in param.keys(): print(margin + "  Prefix: '" + param['prefix'] + "'")
+        if 'suffix' in param.keys(): print(margin + "  Suffix: '" + param['suffix'] + "'")
+        print(cross_line)
+    print()
+    exit()
+
+def get_parameters(parameter_file):
+    with open(parameter_file, 'r') as pfile:
+        default_params = json.load(pfile)['default_params']
+
+    if '-h' in sys.argv:
+        print_manual(default_params)
+        exit()
     else:
-        return None
+        parameters = {}
+        for key, param_info in default_params.items():
+            if 'range' in param_info.keys(): val_range = param_info['range']
+            else: val_range = None
+            
+            if param_info['type'].upper() == 'INT':
+                parameters[key] = get_int_arguments(param_info['flag'], param_info['val'], param_info['name'], val_range)
+            elif param_info['type'].upper() =='FLOAT':
+                parameters[key] = get_float_arguments(param_info['flag'], param_info['val'], param_info['name'], val_range)
+            elif param_info['type'].upper() == 'BOOL':
+                parameters[key] = get_bool_flag(param_info['flag'], param_info['val'])
+            elif param_info['type'].upper() == 'STRING':
+                if 'prefix' in param_info.keys(): prefix = param_info['prefix']
+                else: prefix = None
+                if 'suffix' in param_info.keys(): suffix = param_info['suffix']
+                else: suffix = None
+                parameters[key] = get_string_argument(param_info['flag'], param_info['val'], param_info['name'], prefix, suffix)
 
-def get_int_arguments(flags, defaults):
-    vals = []
-    for i in range(len(flags)):
-        if flags[i] in sys.argv:
-            args_index = sys.argv.index(flags[i])
-            if args_index == len(sys.argv) - 1 or sys.argv[args_index + 1].startswith('-'):
-                print('Class REDISTRICTER ERROR: No K value given:\n  ↳ \''+flags[i]+'\' argument must be followed by an int')
-                exit()
-            else:
-                if sys.argv[args_index + 1].isdigit():
-                    vals.append(int(sys.argv[args_index + 1]))
-                else:
-                    print('Class REDISTRICTER ERROR: Invalid K value given:\n  ↳ K must be an int, not \''+sys.argv[args_index + 1]+"'")
-                    exit()
-        else:
-            vals.append(defaults[i])
-    return vals
+        for key, info in parameters.items():
+            if info == None and default_params[key]['val'] != "none": exit()
 
-def get_float_arguments(flags, defaults):
-    vals = []
-    for i in range(len(flags)):
-        flag = flags[i]
-        default_val = defaults[i]
-        if flag in sys.argv:
-            args_index = sys.argv.index(flag)
-            if args_index == len(sys.argv) - 1 or sys.argv[args_index + 1].startswith('-'):
-                print('Class REDISTRICTER ERROR: No value given:\n  ↳ \''+flag+'\' argument must be followed by a float (0 <= x <= 1)')
-                exit()
-            else:
-                if float(sys.argv[args_index + 1]) >= 0 and float(sys.argv[args_index + 1]) <= 1:
-                    vals.append(float(sys.argv[args_index + 1]))
-                else:
-                    print(sys.argv[args_index + 1].isnumeric())
-                    print('Class REDISTRICTER ERROR: Invalid \''+flag[1:]+'\' value given:\n  ↳ Value must be a float (0 <= x <= 1), not \''+sys.argv[args_index + 1]+"'")
-                    exit()
-        else:
-            vals.append(default_val)
-    return vals
+        return parameters
