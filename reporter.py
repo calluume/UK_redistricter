@@ -96,25 +96,31 @@ class Reporter:
             for frame in self.maps:
                 delete_frame(frame)
 
-    def update_stats(self, fitness_metrics, vote_shares=None, no_changes=None, k=None, stage_text=""):
+    def update_stats(self, fitness_metrics=None, vote_shares=None, no_changes=None, k=None, pbar_prefix='  ↳ Generating map... '):
         if k != None:
             self.k = k
         if self.log_writer != None:
-            
-            curr_log = [self.k, self.no_func_evals] + fitness_metrics
+            if fitness_metrics != None:
+                curr_log = [self.k, self.no_func_evals] + fitness_metrics
 
-            if no_changes != None: curr_log.append(no_changes)
-            else: curr_log.append('NULL')
+                if no_changes != None: curr_log.append(no_changes)
+                else: curr_log.append('NULL')
 
-            for party in party_colours.keys():
-                curr_log.append((vote_shares[party][1] - vote_shares[party][3])/vote_shares[party][3])
+                for party in party_colours.keys():
+                    curr_log.append((vote_shares[party][1] - vote_shares[party][3])/vote_shares[party][3])
 
-            self.log_writer.writerow(curr_log)
-            self.logs.append(curr_log)
+                self.log_writer.writerow(curr_log)
+                self.logs.append(curr_log)
 
-        if self.generate_progress_bar:
-            generate_progress_bar(self.k, self.kmax, 'k: {0}/{1} ({2}), fitness: {3} {4}'.format(self.k, self.kmax, str(timedelta(seconds=int(time.time() - self.start_time))), round(fitness_metrics[0], 6), stage_text), prefix='Progress: ')
+        if self.generate_progress_bar and fitness_metrics != None:
+            self.update_progress_bar(fitness_metrics[0], pbar_prefix)
             if self.k == self.kmax: print()
+
+    def update_progress_bar(self, fitness_val=None, prefix='  ↳ Generating map... ', bar_length='terminal'):
+        if fitness_val == None:
+            if self.logs == []: fitness_val = '???'
+            else: fitness_val = self.logs[-1][2]
+        generate_progress_bar(self.k, self.kmax, 'k: {0}/{1} ({2}), fitness: {3}'.format(self.k, self.kmax, str(timedelta(seconds=int(time.time() - self.start_time))), round(fitness_val, 6)), prefix=prefix, bar_length=bar_length)
 
     def close(self, show_plot=True, plot_title=None, save_plot=None, verbose=True):
         """

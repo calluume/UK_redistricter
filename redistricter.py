@@ -8,6 +8,7 @@ from utils import *
 from plotter import *
 from reporter import *
 
+from os.path import exists
 from scipy.stats import boltzmann
 from scipy.spatial import distance
 from geopy.distance import geodesic
@@ -123,6 +124,7 @@ class Redistricter:
         else: stage_text = ""
         
         # Use the stats reporter to record the run statistics
+        if verbose: print('Starting Redistricting:')
         self.stats_reporter.kmax = kmax
         self.stats_reporter.start_time = time.time()
         self.stats_reporter.update_stats([initial_fitness, initial_fairness, initial_compactness], initial_results['national_votes'], k=k)
@@ -155,11 +157,12 @@ class Redistricter:
 
             if no_changes == 0: print('\nNo changes were made during local search!')
             
+            self.stats_reporter.update_stats([current_fitness, current_wvs, current_lwr], current_results['national_votes'], no_changes=no_changes, k=k, pbar_prefix='  ↳ Finishing Iteration... ')
+
             self.perform_probability_smoothing(0.8, 0.995)
 
             k += 1
 
-            self.stats_reporter.update_stats([current_fitness, current_wvs, current_lwr], current_results['national_votes'], no_changes=no_changes, k=k, stage_text=stage_text)
             self.wards, self.constituencies = current_solution.wards, current_solution.constituencies
 
             if video_filename != None and self.stats_reporter.plotter != None:
@@ -264,7 +267,7 @@ class Redistricter:
                     elif pij < 0: pij = 0
                     self.probability_matrix[i][j] = pij
 
-    def generate_matrices(self, generate_new_constituencies=False, distance_matrix_file="data/dst.npy", load_distances=True, euclidean_distance=False, save_txt=True, verbose=False):
+    def generate_matrices(self, generate_new_constituencies=False, distance_matrix_file="data/dst.npy", euclidean_distance=False, save_txt=True, verbose=False):
         """
         Generates the probability and distance matrices for group selection.
         :param distance_matrix_file: Location of distance matrix file - .npy format
@@ -275,10 +278,12 @@ class Redistricter:
 
         self.probability_matrix = np.zeros((self.n, self.k), dtype=np.float64)
         self.distance_matrix = np.zeros((self.n, self.n), dtype=np.float64)
+
+        load_distances = exists(distance_matrix_file)
         val = 0
         if verbose:
             print('Generating Matrices...')
-            if not load_distances: print('  ↳ Creating distance matrix...')
+            if not load_distances: print('  ↳ Distance matrix not found!')
 
         for i in range(len(self.ward_ids)):
             ward = self.ward_ids[i]
@@ -295,6 +300,7 @@ class Redistricter:
                     exit()
 
             if not load_distances:
+                if verbose: generate_progress_bar(i, len(self.ward_ids), bar_length='terminal', prefix='  ↳ Generating distance matrix...')
                 for j in range(len(self.ward_ids)):
                     if self.distance_matrix[i][j] == 0:
                         if i != j and self.ward_ids[j][0] == ward[0]:
@@ -303,7 +309,6 @@ class Redistricter:
                             ward_j_centroid = self.wards[self.ward_ids[j]]['geography']['centroid']
                             if euclidean_distance: dst = distance.euclidean(ward_i_centroid, ward_j_centroid)
                             else: dst = geodesic((ward_i_centroid[1], ward_i_centroid[0]), (ward_j_centroid[1], ward_j_centroid[0])).km
-                            if verbose: print(val, '-', dst)
                             self.distance_matrix[i][j] = dst
                             if self.distance_matrix[j][i] == 0: self.distance_matrix[j][i] = dst
       
@@ -445,6 +450,8 @@ class Solution:
         while len(assigned_wards) < len(self.ward_ids):
             
             for ward_index, ward_id in enumerate(self.ward_ids):
+                self.reporter.update_progress_bar(prefix='  ↳ Acceptance Selection... ')
+
                 if ward_id in assigned_wards: continue
                 ward = self.wards[ward_id]
 
@@ -576,6 +583,7 @@ class Solution:
         ignore_contiguity = [False] * len(self.ward_ids)
         while len(assigned_wards) < len(self.ward_ids):
             for i in range(len(self.ward_ids)):
+                self.reporter.update_progress_bar(prefix='  ↳ Voronoi Selection... ')
 
                 ward_id = self.ward_ids[i]
                 if ward_id not in central_ward_ids and ward_id not in assigned_wards:
@@ -671,7 +679,7 @@ class Solution:
                     self.make_swap(swap[0], swap[1])
                     self.merge_constituency_wards(swap[1:])
 
-            if self.reporter != None: self.reporter.update_stats([current_fitness, current_fairness, current_compactness], current_results['national_votes'])
+            if self.reporter != None: self.reporter.update_stats([current_fitness, current_fairness, current_compactness], current_results['national_votes'], pbar_prefix='  ↳ Improving Solution... ')
         
         if verbose: print(current_fitness)
 

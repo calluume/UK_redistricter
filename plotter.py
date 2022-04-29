@@ -6,6 +6,7 @@ import geopandas as gpd
 
 from PIL import Image, ImageDraw, ImageFont
 
+from os import get_terminal_size
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -467,6 +468,10 @@ def generate_progress_bar (cur_val, max_val, state='', bar_length = 20, fill = '
 
     if state == '':
         state = '{0}/{1}'.format(cur_val, max_val)
+
+    if bar_length.upper() == 'TERMINAL':
+        terminal_width = int(get_terminal_size()[0])
+        bar_length = terminal_width - len(state) - len(prefix) - 5
 
     filledLength = int(bar_length * cur_val // max_val)
     bar = fill * filledLength + empty * (bar_length - filledLength)

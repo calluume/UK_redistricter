@@ -42,14 +42,14 @@
             "desc": "Denotes whether to skip creating a plotter object.",
             "flag": "-m",
             "type": "bool",
-            "val": false
+            "val": true
         },
         "skip_pbar": {
             "name": "Skip Progress Bar",
             "desc": "Denotes whether to skip drawing a progress bar.",
             "flag": "-p",
             "type": "bool",
-            "val": false
+            "val": true
         },
         "show_results": {
             "name": "Show Election Results",

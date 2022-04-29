@@ -48,7 +48,7 @@ def gps_to_ecef(coors, alt=0):
     return [x, y, z]
 
 def get_bool_flag(flag, default_val):
-    if flag in sys.argv: return True
+    if flag in sys.argv: return not default_val
     else: return default_val
     
 def get_string_argument(flag, default_val, name, prefix=None, suffix=None):
