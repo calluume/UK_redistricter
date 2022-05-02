@@ -24,11 +24,6 @@
             "name": "Wales ward boundaries",
             "gdrive_link": "https://drive.google.com/uc?id=19EQZ5iz0NqfDrn5TJqxSURuHQWi3i33V",
             "output_file": "data/boundaries/wa_wards.gpkg"
-        },
-        "test": {
-            "name": "test image",
-            "gdrive_link": "https://drive.google.com/uc?id=12r55ab-ZE6DQ_j9rY0Gp8UCYeSPq7fF5",
-            "output_file": "balls/test.png"
         }
     },
     "default_params": {

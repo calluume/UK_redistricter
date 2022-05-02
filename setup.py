@@ -1,6 +1,6 @@
 import gdown, json
 from os import makedirs
-from os.path import exists, dirname, join
+from os.path import exists, dirname
 
 if __name__ == "__main__":
     with open('data/default_parameters.json', 'r') as defaults_file:
