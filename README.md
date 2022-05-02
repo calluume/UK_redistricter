@@ -50,7 +50,7 @@ GeoPackage files containing the boundaries for each country are also required in
 
 All wards and constituencies are referred to using their ONS code, (England E05 / E14, Wales W05 / W06, Scotland S13 / S14, Northern Ireland N08 / N06), except for the City of London, which uses the London borough boundaries (E09) due to data availability from the 2011 census.
 
-The selection methods used within the algorithm also require a distance matrix storing the distances between each ward, which has to be created when the model is first run, done using the `generate_matrices(load_distances=False)` function.
+The selection methods used within the algorithm also require a distance matrix storing the distances between each ward, which has to be created when the model is first run if it has not already been downloaded on setup, done using the `generate_matrices(load_distances=False)` function.
 
 ## Usage
 
