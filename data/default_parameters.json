@@ -51,13 +51,6 @@
             "type": "bool",
             "val": true
         },
-        "show_results": {
-            "name": "Show Election Results",
-            "desc": "Denotes whether to print election results after each iteration.",
-            "flag": "-sr",
-            "type": "bool",
-            "val": false
-        },
         "plot_rcolours": {
             "name": "Plot Random Colours",
             "desc": "Denotes whether to plot maps using random constituency colours.",

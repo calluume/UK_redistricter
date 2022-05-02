@@ -1,4 +1,4 @@
-import json, copy, math, sys
+import json, copy, math
 
 import numpy as np
 import random as rnd
@@ -392,7 +392,8 @@ class Solution:
         elif method.upper() == 'VORONOI-SELECTION':
             self.voronoi_selection(threshold)
 
-    
+        self.merge_constituency_wards()
+
     def random_selection(self):
         """
         Randomly assigns wards to constituencies, ignoring the values in the
@@ -412,8 +413,6 @@ class Solution:
             ward['constituency_id'] = assigned_constituency
             ward['constituency_name'] = self.constituencies[assigned_constituency]['name']
             self.constituencies[assigned_constituency]['wards'].append(self.ward_ids[i])
-
-        self.merge_constituency_wards()
 
     def acceptance_selection(self, hybrid_threshold):
         """
@@ -520,7 +519,6 @@ class Solution:
             if len(constituency['wards']) == 0:
                 print("\nClass SOLUTION ERROR: Constituency has not been assigned any wards.\n  ↳ Constituency: "+constituency['name']+" ("+constituency_id+").")
                 exit()
-        self.merge_constituency_wards()
 
     def voronoi_selection(self, hybrid_threshold, voronoi_threshold=6, contiguity_threshold=10):
         """
@@ -621,8 +619,6 @@ class Solution:
                                 break
                         assignment_attempts[i] += 1
                         if assignment_attempts[i] >= contiguity_threshold: ignore_contiguity[i] = True
-
-        self.merge_constituency_wards()
         
         notcontiguous = []
         for constituency_id in self.constituencies.keys():
@@ -933,8 +929,6 @@ class Solution:
         if run_election: results = self.run_election(countries=self.countries, verbose=verbose)
         else: results = None
 
-        if verbose: print_results(results['national_votes'])
-
         if self.reporter != None: self.reporter.no_func_evals += 1
 
         sv_difference = self.calculate_avg_sv_diff(results, countries=countries)
@@ -1133,7 +1127,6 @@ if __name__ == "__main__":
     
     -m:        Skip creating a plotter object
     -p:        Force no progress bar
-    -sr:       Show election results with each function evaluation
     -v:        Run the program verbose
     -rcolours: Use random constituency colours in plots
     
