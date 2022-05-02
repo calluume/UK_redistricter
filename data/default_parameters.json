@@ -1,4 +1,36 @@
 {
+    "default_files": {
+        "distance_matrix": {
+            "name": "Numpy distance matrix",
+            "gdrive_link": "https://drive.google.com/uc?id=1X-grssbrGv2qUDX9HPgoiPZN2Cc3yOsE",
+            "output_file": "data/dst.npy"
+        },
+        "eng_boundaries": {
+            "name": "England ward boundaries",
+            "gdrive_link": "https://drive.google.com/uc?id=1WR4j2fGItX0KXVOKvATnMhHeYMBBa2Ve",
+            "output_file": "data/boundaries/eng_wards.gpkg"
+        },
+        "ni_boundaries": {
+            "name": "Northern Ireland ward boundaries",
+            "gdrive_link": "https://drive.google.com/uc?id=1AwXHyrImsiPDDtH67bmRwJCLKCNB7P6o",
+            "output_file": "data/boundaries/ni_wards.gpkg"
+        },
+        "sco_boundaries": {
+            "name": "Scotland ward boundaries",
+            "gdrive_link": "https://drive.google.com/uc?id=1yVDjHTXzpUqZ-jwJDLJEZCqLdhO8IB8B",
+            "output_file": "data/boundaries/sco_wards.gpkg"
+        },
+        "wa_wards": {
+            "name": "Wales ward boundaries",
+            "gdrive_link": "https://drive.google.com/uc?id=19EQZ5iz0NqfDrn5TJqxSURuHQWi3i33V",
+            "output_file": "data/boundaries/wa_wards.gpkg"
+        },
+        "test": {
+            "name": "test image",
+            "gdrive_link": "https://drive.google.com/uc?id=12r55ab-ZE6DQ_j9rY0Gp8UCYeSPq7fF5",
+            "output_file": "balls/test.png"
+        }
+    },
     "default_params": {
         "falpha": {
             "name": "Alpha",

@@ -27,7 +27,7 @@ party_colours = {'conservatives': ['#0087DC', 'Blues'],
                 }
 
 class Plotter:
-    def __init__(self, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, boundary_files_location='../datasets/wards/boundaries/', verbose=False):
+    def __init__(self, countries=['England', 'Wales', 'Scotland', 'Northern Ireland'], regions=None, boundary_files_location='data/boundaries/', verbose=False):
         country_dataframes = []
         if verbose: print('PLOTTER:')
         for country in countries:

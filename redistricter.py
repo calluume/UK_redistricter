@@ -20,7 +20,7 @@ protected_constituencies = ['W07000041', # Ynys Môn (Anglesey)
 
 class Redistricter:
 
-    def __init__(self, wards_cons_file, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', boundary_files_location='../datasets/wards/boundaries/', verbose=False):
+    def __init__(self, wards_cons_file, create_plotter=False, show_progress=True, results_folder='results/', log_file_location='data/logs/', boundary_files_location='data/boundaries/', verbose=False):
         """
         :param wards_cons_file: Location of ward and constituency JSON data
         :param create_plotter: Denotes whether to create a plotter object

@@ -22,6 +22,19 @@ The project has been developed using Python 3.8.12, and requires a number of ext
 - GeoPy
 - OpenCV
 - Matplotlib
+- Gdown
+
+## Setup
+
+In order to run the redistricter, a few files are required:
+
+- `dst.npy`: The distance matrix containing the distance between all wards
+- `eng_wards.gpkg`: England ward boundaries
+- `wa_wards.gpkg`: Wales ward boundaries
+- `sco_wards.gpkg`: Scotland ward boundaries
+- `ni_wards.gpkg`: Northern Ireland ward boundaries
+
+The boundary files are available online and distance matrix can be generated using `redistricter.py` (although this takes a long time), but all of these can be downloaded using gdown by running `setup.py`.
 
 ## Datasets
 
@@ -45,7 +58,6 @@ The redistricter object can be defined and used within code by itself, but comma
 
     -m:        Skip creating a plotter object
     -p:        Force no progress bar
-    -sr:       Show election results with each function evaluation
     -v:        Run the program verbose
     -rcolours: Use random constituency colours in plots
     
@@ -62,6 +74,8 @@ For example, the following command:
 ```python3 redistricter.py -k 10 -c 2 -ims 100 -vf test.mp4 -falpha 0.8 -fbeta 0.2 -v```
 
 will run for 12 iterations (10 for the first stage and 2 more for the second stage, optimising only for fairness), with 100 steps during the local search. The model will be run during the first stage with an alpha value of 0.8, and a beta value of 0.2, and the maps at each stage will be collected into a video called "test.mp4" (saved in the video directory).
+
+Using the `-h` flag will print a manual with all possible command line arguments, although all the default values can be tweaked in the `data/default_parameters.json` file.
 
 ## Examples
 
