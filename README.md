@@ -34,7 +34,7 @@ In order to run the redistricter, a few files are required:
 - `sco_wards.gpkg`: Scotland ward boundaries
 - `ni_wards.gpkg`: Northern Ireland ward boundaries
 
-The boundary files are available online and distance matrix can be generated using `redistricter.py` (although this takes a long time), but all of these can be downloaded using gdown by running `setup.py`.
+The boundary files are available online and distance matrix can be generated using `redistricter.py` (although this takes a long time), but all of these can be downloaded with Gdown by running `setup.py`.
 
 ## Datasets
 
@@ -46,7 +46,7 @@ However, once re-combined to the constituency-level, there is a small difference
     <img width="500" alt="diff_table" src="https://user-images.githubusercontent.com/62618224/161809783-ac13c34f-ce49-4381-bb4b-b08fcf13165b.png">
 </p>
 
-GeoPackage files containing the boundaries for each country are also required in order to map solutions. In which case, England and Wales use the 2011 boundaries available from the ONS, Scotland uses the 2014 boundaries from Boundaries Scotland and Northern Ireland uses the 1993 boundaries from OpenDataNI.
+GeoPackage files containing the boundaries for each country are also required in order to map solutions. In which case, England and Wales use the 2011 boundaries available from the ONS, Scotland uses the 2014 boundaries from Boundaries Scotland and Northern Ireland uses the 1993 boundaries from OpenDataNI (distributed under the [Open Government License](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)).
 
 All wards and constituencies are referred to using their ONS code, (England E05 / E14, Wales W05 / W06, Scotland S13 / S14, Northern Ireland N08 / N06), except for the City of London, which uses the London borough boundaries (E09) due to data availability from the 2011 census.
 
@@ -87,4 +87,4 @@ Below is a video of the algorithm generating boundaries from scratch, done by se
 
 ## References
 
-[1] Zhou, Yangming, Jin-Kao Hao and Béatrice Duval (Dec. 2016). ‘Reinforcement learning based local search for grouping problems: A case study on graph coloring’. In: Expert Systems with Applications 64, pp. 412–422. issn: 09574174. doi: 10.1016/j.eswa.2016.07.047.
+[1] Zhou, Yangming, Jin-Kao Hao and Béatrice Duval (Dec. 2016). ‘Reinforcement learning based local search for grouping problems: A case study on graph coloring’. In: Expert Systems with Applications 64, pp. 412–422. doi: 10.1016/j.eswa.2016.07.047.
