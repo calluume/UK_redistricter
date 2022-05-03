@@ -41,7 +41,7 @@ class Redistricter:
         self.k = len(self.constituency_ids)
         self.n = len(self.ward_ids)
 
-        self.generate_matrices()
+        self.generate_matrices(verbose=verbose)
 
         self.stats_reporter = Reporter(progress_bar=show_progress, log_file_location=log_file_location)
         if create_plotter: self.stats_reporter.plotter = Plotter(verbose=verbose, boundary_files_location=boundary_files_location)
@@ -50,7 +50,7 @@ class Redistricter:
 
     def generate_map(self, kmax, f_alpha=1, f_beta=1, improvements=100, reward_factor=0.8, penalisation_factor=0.6, compensation_factor=0.8, compactness_stage_length=0, electorate_deviation=0.05, video_filename=None, plot_random_colours=False, make_final_plots=True, show_plots=True, final_map_location=None, save_solution_location=None, verbose=False):
         """
-        Generates a new constituency map using the outlined method.
+        Generates a new constituency map using the main RL DBLS algorithm.
         :param kmax: Number of stage 1 iterations
         :param f_alpha: Stage 1 fairness priority (Set to 0 in stage 2)
         :param f_beta: Stage 1 compactness priority (Set to 1 in stage 2)
@@ -119,9 +119,6 @@ class Redistricter:
         k = 0
         kmax += compactness_stage_length
         no_changes = math.inf
-
-        if compactness_stage_length > 0: stage_text = "(1st Stage)"
-        else: stage_text = ""
         
         # Use the stats reporter to record the run statistics
         if verbose: print('Starting Redistricting:')
@@ -157,20 +154,18 @@ class Redistricter:
 
             if no_changes == 0: print('\nNo changes were made during local search!')
             
+            k += 1
+
             self.stats_reporter.update_stats([current_fitness, current_wvs, current_lwr], current_results['national_votes'], no_changes=no_changes, k=k, pbar_prefix='  ↳ Finishing Iteration... ')
 
             self.perform_probability_smoothing(0.8, 0.995)
 
-            k += 1
-
             self.wards, self.constituencies = current_solution.wards, current_solution.constituencies
 
             if video_filename != None and self.stats_reporter.plotter != None:
-                self.stats_reporter.record_video_frame(self.wards, self.constituencies, k, text='Iteration: {0}, Fitness: {1} {2}'.format(k, round(current_fitness, 4), stage_text), random_colours=random_colours)
+                self.stats_reporter.record_video_frame(self.wards, self.constituencies, k, text='Iteration: {0}, Fitness: {1}'.format(k, round(current_fitness, 4)), random_colours=random_colours)
 
-            if compactness_stage_length != 0 and k == kmax - compactness_stage_length:
-                self.f_alpha, self.f_beta = 0, 1
-                stage_text = "(2nd stage)"
+            if compactness_stage_length != 0 and k == kmax - compactness_stage_length: self.f_alpha, self.f_beta = 0, 1
 
         self.f_alpha, self.f_beta = f_alpha, f_beta
         

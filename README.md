@@ -1,7 +1,7 @@
 
 # UK Electoral Redistricter
 
-This redistricter has been developed as part of my dissertation for the final year of my MSci in Computer Science at the University of Exeter, and is aimed to be completed by early May, with the final report released and hopefully published soon after. The project itself aims to propose a new method for electoral districting using a reinforcement-learning approach, based on a graph grouping algorithm proposed by Zhou et al. (2016) [1].
+This redistricter was developed as part of my dissertation for the final year of my MSci in Computer Science at the University of Exeter (completed as of the 4th of May!), with the final report hopefully published this summer. The project itself aims to propose a new method for electoral districting using a reinforcement-learning approach, based on a graph grouping algorithm proposed by Zhou et al. (2016) [1].
 
 The project is being applied to the UK, especially with the current boundary review set to be completed in 2023, and aims to directly optimise solutions for fairness, unlike many papers within the literature. This is done using comparisons between party seat share and proportional vote, alongside some compactness measures and legal constraints to ensure the model is able to produce reasonable results, whilst still being able to best represent the electorate.
 
