@@ -1,15 +1,15 @@
 
 # UK Electoral Redistricter
 
-This redistricter was developed as part of my dissertation for the final year of my MSci in Computer Science at the University of Exeter (completed as of the 4th of May!), with the final report hopefully published this summer. The project itself aims to propose a new method for electoral districting using a reinforcement-learning approach, based on a graph grouping algorithm proposed by Zhou et al. (2016) [1].
-
-The project is being applied to the UK, especially with the current boundary review set to be completed in 2023, and aims to directly optimise solutions for fairness, unlike many papers within the literature. This is done using comparisons between party seat share and proportional vote, alongside some compactness measures and legal constraints to ensure the model is able to produce reasonable results, whilst still being able to best represent the electorate.
-
 <p align="center" width="100%">
     <img width="600" alt="south" src="https://user-images.githubusercontent.com/62618224/161809829-1a0d43fb-a570-40de-a3ea-a2b02b6a2361.png">
 </p>
 
-If you have any questions, feel free to send me an email at ce347@exeter.ac.uk, or contact me on my website at [callum-evans.co.uk](https://callum-evans.co.uk/)
+This redistricter was developed as part of my dissertation for the final year of my MSci in Computer Science at the University of Exeter with the goal of developing a new method for electoral districting using a reinforcement-learning approach, based on a graph grouping algorithm proposed by Zhou et al. (2016) [1]. The project has been applied to the UK and aims to directly optimise boundaries for fairness and the solution's ability to best represent the electorate, unlike many papers within the literature which mostly focus on factors such as population distribution. This is done through a newly developed metric for electoral fairness, the "Seats-votes difference," which is able to make direct comparisons towards party seat and vote shares and, importantly, can be applied to parliamentary systems with any number of parties.
+
+A paper detailing the proposed algorithm and the seats-votes difference will be published as part of "[SoGood 2022: The 7th Workshop on Data Science for Social Good](https://sites.google.com/view/ecmlpkddsogood2022/)," including a poster presentation at the conference in Grenoble on the 23<sup>rd</sup> of September.
+
+If you have any questions, feel free to contact me on my website at [callum-evans.co.uk](https://callum-evans.co.uk/)
 
 ## Installation
 
@@ -38,7 +38,7 @@ The boundary files are available online and distance matrix can be generated usi
 
 ## Datasets
 
-The model uses a dataset that covers the over 9,500 wards in England, Wales, Scotland and Northern Ireland, with socio-demographic data collected from the 2011 census. Ward-level election results have then been generated using this data and a linear regression model trained on constituency party support from the 2017 general election.
+The dataset used in the model is available within this repository or on Kaggle [2], and covers the over 9,500 wards in England, Wales, Scotland and Northern Ireland, with socio-demographic data collected from the 2011 census. More detailed information on the dataset and its creation can be found on Kaggle, but ward-level election results have then been generated using this data and a linear regression model trained on constituency party support from the 2017 general election.
 
 However, once re-combined to the constituency-level, there is a small difference between the real results and the model results, as shown in the table below:
 
@@ -88,3 +88,5 @@ Below is a video of the algorithm generating boundaries from scratch, done by se
 ## References
 
 [1] Zhou, Yangming, Jin-Kao Hao and Béatrice Duval (Dec. 2016). ‘Reinforcement learning based local search for grouping problems: A case study on graph coloring’. In: Expert Systems with Applications 64, pp. 412–422. doi: 10.1016/j.eswa.2016.07.047.
+
+[2] Evans, C.: UK Ward Demographic Data and 2017 Election Results Dataset (Jul 2022), https://doi.org/10.34740/kaggle/dsv/3706511
